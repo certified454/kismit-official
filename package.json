@@ -1,0 +1,33 @@
+{
+  "name": "kismet-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start:dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo \"Error: no build specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "type": "module",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.6.1",
+    "cors": "^2.8.5",
+    "cron": "^4.3.0",
+    "cros": "^1.1.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.14.1",
+    "nodemailer": "^7.0.2",
+    "zustand": "^5.0.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
