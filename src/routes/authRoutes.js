@@ -90,7 +90,7 @@ router.post("/register", async (req, res) => {
                     <style>
                         body {
                             font-family: Arial, sans-serif;
-                            background-color: #f5f5f5;
+                            background-color: #ffffff;
                             color: #000;
                             margin: 0;
                             padding: 20px;
@@ -100,13 +100,13 @@ router.post("/register", async (req, res) => {
                             max-width: 600px;
                             margin: 0 auto;
                             padding: 30px;
-                            background-color: #ffffff;
+                            background-color: #f6f6f6;
                             border-radius: 5px;
                         }
                         .footer {
                             margin-top: 20px;
                             padding: 10px;
-                            background-color: #ffffff;
+                            background-color: #f6f6f6;
                             text-align: center;
                             font-size: 12px;
                             color: #777777;
@@ -144,6 +144,7 @@ router.post("/register", async (req, res) => {
                 <body>
                     <div class="container">
                         <h1>Verify Your Email</h1>
+                        <img src="/images/logo.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
                         <p>Hi ${username},</p>
                         <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this four digit code bellow:</p>
                         <h2>${verificationCode}</h2>
@@ -299,7 +300,7 @@ router.post("/resend-code", async (req, res) => {
                     <style>
                         body {
                             font-family: Arial, sans-serif;
-                            background-color: #f5f5f5;
+                            background-color: #ffffff;
                             color: #000000;
                             margin: 0;
                             padding: 20px;
@@ -309,13 +310,13 @@ router.post("/resend-code", async (req, res) => {
                             max-width: 600px;
                             margin: 0 auto;
                             padding: 30px;
-                            background-color: #ffffff;
+                            background-color: #f5f5f5;
                             border-radius: 5px;
                         }
                         .footer {
                             margin-top: 20px;
                             padding: 10px;
-                            background-color: #ffffff;
+                            background-color: #f5f5f5;
                             text-align: center;
                             font-size: 12px;
                             color: #777777;
@@ -352,6 +353,7 @@ router.post("/resend-code", async (req, res) => {
                 </head>
                 <body>
                     <div class="container">
+                        <img src="/images/logo.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
                         <h1>Verify Your Email</h1>
                         <p>Hi ${user.username},</p>
                         <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this four digit code bellow:</p>
