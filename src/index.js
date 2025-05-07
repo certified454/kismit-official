@@ -1,6 +1,7 @@
 import express from "express"; 
 import "dotenv/config";
 import cors from "cors";
+const path = require('path');   
 
 import authRoutes from "./routes/authRoutes.js";
 import { connectDB } from "./lib/db.js"
