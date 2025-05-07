@@ -90,8 +90,8 @@ router.post("/register", async (req, res) => {
                     <style>
                         body {
                             font-family: Arial, sans-serif;
-                            background-color: #ffffff;
-                            color: #000000;
+                            background-color: #f5f5f5;
+                            color: #000;
                             margin: 0;
                             padding: 20px;
                             line-height: 1.6;
@@ -100,20 +100,20 @@ router.post("/register", async (req, res) => {
                             max-width: 600px;
                             margin: 0 auto;
                             padding: 30px;
-                            background-color: #f5f5f5;
+                            background-color: #ffffff;
                             border-radius: 5px;
                         }
                         .footer {
                             margin-top: 20px;
                             padding: 10px;
-                            background-color: #f5f5f5;
+                            background-color: #ffffff;
                             text-align: center;
                             font-size: 12px;
                             color: #777777;
                             border-radius: 5px;
                         }
                         h1 {
-                            color: #008080;
+                            color: #4B0082;
                             font-size: 24px;
                             margin-bottom: 20px;
                             text-align: center;
@@ -211,8 +211,7 @@ router.post("/verify-code", async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    if (user.isVerified)
-      return res.status(400).json({ message: "User already verified" });
+    if (user.isVerified) return res.status(400).json({ message: "User already verified" });
 
     if (String(user.verificationCode) !== String(code).trim()) {
       console.log(
@@ -300,7 +299,7 @@ router.post("/resend-code", async (req, res) => {
                     <style>
                         body {
                             font-family: Arial, sans-serif;
-                            background-color: #ffffff;
+                            background-color: #f5f5f5;
                             color: #000000;
                             margin: 0;
                             padding: 20px;
@@ -310,20 +309,20 @@ router.post("/resend-code", async (req, res) => {
                             max-width: 600px;
                             margin: 0 auto;
                             padding: 30px;
-                            background-color: #f5f5f5;
+                            background-color: #ffffff;
                             border-radius: 5px;
                         }
                         .footer {
                             margin-top: 20px;
                             padding: 10px;
-                            background-color: #f5f5f5;
+                            background-color: #ffffff;
                             text-align: center;
                             font-size: 12px;
                             color: #777777;
                             border-radius: 5px;
                         }
                         h1 {
-                            color: #008080;
+                            color: #4B0082;
                             font-size: 24px;
                             margin-bottom: 20px;
                             text-align: center;
@@ -400,8 +399,7 @@ router.post("/login", async (req, res) => {
     if (!user.isVerified) {
       console.log("User is not verified");
       return res.status(400).json({
-        message: "User is not verified",
-        redirecytTo: "/verify-code",
+        message: "Account is not verified",
       });
     }
 
