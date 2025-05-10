@@ -43,7 +43,7 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
 
     const profilePicture =
-      "https://api.dicebear.com/6.x/initials/svg?seed=${username}";
+      `https://api.dicebear.com/6.x/initials/svg?seed=${username}`;
 
     //generate verification code
     const generateVerificationCode = () => {
@@ -100,17 +100,19 @@ router.post("/register", async (req, res) => {
                             max-width: 600px;
                             margin: 0 auto;
                             padding: 30px;
-                            background-color: #f6f6f6;
+                            background-color: #ffffff;
                             border-radius: 5px;
+                            box-shadow: 0 2px 4px rgb(111, 7, 184);
                         }
                         .footer {
                             margin-top: 20px;
                             padding: 10px;
-                            background-color: #f6f6f6;
+                            background-color: #ffffff;
                             text-align: center;
                             font-size: 12px;
                             color: #777777;
                             border-radius: 5px;
+                            box-shadow: 0 2px 4px rgb(110, 7, 184);
                         }
                         h1 {
                             color: #4B0082;
@@ -144,7 +146,7 @@ router.post("/register", async (req, res) => {
                 <body>
                     <div class="container">
                         <h1>Verify Your Email</h1>
-                        <img src="/images/logo.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
+                        <img src="https://github.com/certified454/My-portfolio/blob/326ea0bcae6116cb6b6058825fe4df08f3bec7c1/adaptive-icon.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
                         <p>Hi ${username},</p>
                         <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this four digit code bellow:</p>
                         <h2>${verificationCode}</h2>
@@ -310,17 +312,19 @@ router.post("/resend-code", async (req, res) => {
                             max-width: 600px;
                             margin: 0 auto;
                             padding: 30px;
-                            background-color: #f5f5f5;
+                            background-color: #ffffff;
                             border-radius: 5px;
+                            box-shadow: 0 2px 4px rgb(111, 7, 184);
                         }
                         .footer {
                             margin-top: 20px;
                             padding: 10px;
-                            background-color: #f5f5f5;
+                            background-color: #ffffff;
                             text-align: center;
                             font-size: 12px;
                             color: #777777;
                             border-radius: 5px;
+                            box-shadow: 0 2px 4px rgb(110, 7, 184);
                         }
                         h1 {
                             color: #4B0082;
@@ -353,7 +357,7 @@ router.post("/resend-code", async (req, res) => {
                 </head>
                 <body>
                     <div class="container">
-                        <img src="/images/logo.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
+                        <img src="https://github.com/certified454/My-portfolio/blob/326ea0bcae6116cb6b6058825fe4df08f3bec7c1/adaptive-icon.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
                         <h1>Verify Your Email</h1>
                         <p>Hi ${user.username},</p>
                         <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this four digit code bellow:</p>
@@ -376,7 +380,7 @@ router.post("/resend-code", async (req, res) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log("Error send email", error);
-        return res.status(500).lson({ message: "error sending email" });
+        return res.status(500).json({ message: "error sending email" });
       }
       console.log("Email sent");
       return res.status(200).json({ message: `Email sent to ${email}` });
