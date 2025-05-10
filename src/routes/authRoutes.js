@@ -43,7 +43,7 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
 
     const profilePicture =
-      `https://api.dicebear.com/6.x/initials/svg?seed=${username}`;
+      "https://api.dicebear.com/6.x/initials/svg?seed=${username}";
 
     //generate verification code
     const generateVerificationCode = () => {
@@ -102,7 +102,7 @@ router.post("/register", async (req, res) => {
                             padding: 30px;
                             background-color: #ffffff;
                             border-radius: 5px;
-                            box-shadow: 0 2px 4px rgb(111, 7, 184);
+                            box-shadow: 0 2px 2px rgb(122, 30, 189);
                         }
                         .footer {
                             margin-top: 20px;
@@ -112,7 +112,7 @@ router.post("/register", async (req, res) => {
                             font-size: 12px;
                             color: #777777;
                             border-radius: 5px;
-                            box-shadow: 0 2px 4px rgb(110, 7, 184);
+                            box-shadow: 0 2px 2px rgb(122, 30, 189);
                         }
                         h1 {
                             color: #4B0082;
@@ -314,7 +314,7 @@ router.post("/resend-code", async (req, res) => {
                             padding: 30px;
                             background-color: #ffffff;
                             border-radius: 5px;
-                            box-shadow: 0 2px 4px rgb(111, 7, 184);
+                            box-shadow: 0 2px 2px rgb(122, 30, 189);
                         }
                         .footer {
                             margin-top: 20px;
@@ -324,7 +324,7 @@ router.post("/resend-code", async (req, res) => {
                             font-size: 12px;
                             color: #777777;
                             border-radius: 5px;
-                            box-shadow: 0 2px 4px rgb(110, 7, 184);
+                            box-shadow: 0 2px 2px rgb(122, 30, 189);
                         }
                         h1 {
                             color: #4B0082;
