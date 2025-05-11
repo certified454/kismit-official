@@ -240,7 +240,12 @@ router.post("/verify-code", async (req, res) => {
 
     res.status(200).json({ 
       message: "Account verification is successful",
-      email: user.email,
+      token: generateToken(user._id), 
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+      }
      });
     console.log("Account verification is successful");
   } catch (error) {
@@ -402,7 +407,12 @@ router.post("/login", async (req, res) => {
 
     //check if user exists
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid Cridentials" });
+    if (!user) {
+      console.log("User not found");
+      return res.status(400).json({ 
+        message: "Invalid Cridentials",
+      });
+    }
 
     if (!user.isVerified) {
       console.log("User is not verified");
@@ -413,8 +423,9 @@ router.post("/login", async (req, res) => {
 
     //check if password is matching
     const isPasswordCorrect = await user.comparePassword(password);
+    console.log("isPasswordCorrect", isPasswordCorrect);
     if (!isPasswordCorrect)
-      return res.status(400).json({ message: "Invalid Credentials" });
+      return res.status(400).json({ message: "Password is not correct" });
 
     const token = generateToken(user._id);
 
