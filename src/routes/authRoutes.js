@@ -231,7 +231,6 @@ router.post("/verify-code", async (req, res) => {
       return res.status(400).json({
         message: "Verification code has expired. Please request a new one.",
       });
-      console.log("Verification code has expired. Please request a new one.");
     }
 
     user.isVerified = true;
@@ -239,7 +238,10 @@ router.post("/verify-code", async (req, res) => {
     user.verificationCodeExpires = null;
     await user.save();
 
-    res.status(200).json({ message: "Account verification is successful" });
+    res.status(200).json({ 
+      message: "Account verification is successful",
+      email: user.email,
+     });
     console.log("Account verification is successful");
   } catch (error) {
     console.log("Error in verify route", error);
