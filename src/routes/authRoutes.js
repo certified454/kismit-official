@@ -100,19 +100,19 @@ router.post("/register", async (req, res) => {
                             max-width: 600px;
                             margin: 0 auto;
                             padding: 30px;
-                            background-color: #ffffff;
+                            background-color: #f5f5f5;
                             border-radius: 5px;
-                            box-shadow: 0 2px 2px rgb(122, 30, 189);
+                            box-shadow: 2px 2px 2px 2px rgb(122, 30, 189);
                         }
                         .footer {
                             margin-top: 20px;
                             padding: 10px;
-                            background-color: #ffffff;
+                            background-color: #f5f5f5;
                             text-align: center;
                             font-size: 12px;
                             color: #777777;
                             border-radius: 5px;
-                            box-shadow: 0 2px 2px rgb(122, 30, 189);
+                            box-shadow: 2px 2px 2px 2px rgb(122, 30, 189);
                         }
                         h1 {
                             color: #4B0082;
@@ -238,7 +238,7 @@ router.post("/verify-code", async (req, res) => {
     user.verificationCodeExpires = null;
     await user.save();
 
-    res.status(200).json({ 
+    res.json({ 
       message: "Account verification is successful",
       token: generateToken(user._id), 
       user: {
@@ -267,9 +267,9 @@ router.post("/resend-code", async (req, res) => {
       });
 
     if (user.isVerified)
-      return res
-        .status(400)
-        .json({ message: "This account is already verified" });
+      return res.status(400).json({ 
+      message: "This account is already verified" 
+    });
 
     const generateNewVerificationCode = () => {
       return Math.floor(1000 + Math.random() * 9000).toString();
@@ -319,19 +319,19 @@ router.post("/resend-code", async (req, res) => {
                             max-width: 600px;
                             margin: 0 auto;
                             padding: 30px;
-                            background-color: #ffffff;
+                            background-color: #f5f5f5;
                             border-radius: 5px;
-                            box-shadow: 0 2px 2px rgb(122, 30, 189);
+                            box-shadow: 2px 2px 2px 2px rgb(122, 30, 189);
                         }
                         .footer {
                             margin-top: 20px;
                             padding: 10px;
-                            background-color: #ffffff;
+                            background-color: #f5f5f5;
                             text-align: center;
                             font-size: 12px;
                             color: #777777;
                             border-radius: 5px;
-                            box-shadow: 0 2px 2px rgb(122, 30, 189);
+                            box-shadow: 2px 2px 2px 2px rgb(122, 30, 189);
                         }
                         h1 {
                             color: #4B0082;
