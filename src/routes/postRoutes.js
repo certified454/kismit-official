@@ -22,7 +22,7 @@ const upload = multer({
     }
 })
 
-router.post("/register", protectRoute, upload.single(file),  async (req, res) => {
+router.post("/register", protectRoute, upload.single('file'),  async (req, res) => {
     try {
         const { description, location } = req.body;
         const file = req.file;
