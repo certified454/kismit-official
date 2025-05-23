@@ -1,4 +1,5 @@
 import express from 'express';
+import multer from 'multer';
 
 import Post from "../modules/post.js"
 import cloudinary from '../lib/cloudinary.js';
@@ -6,25 +7,43 @@ import protectRoute from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-router.post("/register", protectRoute, async (req, res) => {
-    try {
-        const { description, fileDataUrl, location } = req.body;
+const storage = multer.memoryStorage();
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    },
+    fileFilter: (req, file, cb ) => {
+        if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/gif' || file.mimetype === 'video/mp4') {
+            cb(null, true)
+        } else {
+            cb(new Error('Invalid file type. Only PNG, JPEG, GIF and MP4 are allowed'))
+        }
+    }
+})
 
-        if (!description || !fileDataUrl) {
+router.post("/register", protectRoute, upload.single(file),  async (req, res) => {
+    try {
+        const { description, location } = req.body;
+        const file = req.file;
+
+        if (!description || !location || !file) {
             console.log("All fileds must be provided")
             return res.status(400).json({ message: "Please fill all fields" });
         }
+        let fileUrl;
+        if(file) {
+            const uploadSource = (storage === multer.memoryStorage()) ? file.buffer : file.path;
+            const uploadToCloudinary = await cloudinary.uploader.upload(uploadSource, {
+                folder: "kismit-post",
+                resource_type: "auto"
+            });
+            fileUrl = uploadToClodinary.secure_uri
+        }
 
-        // Upload the file to Cloudinary
-        const uploadToCloudiary = await cloudinary.uploader.upload(fileDataUrl, {
-            folder: "Kismist-posts",
-        })
-        const fileUrl = uploadToCloudiary.secure_url;
-
-       
         const newPost = new Post({
-            description,
-            file: fileUrl,
+            description: description,
+            fileUrl: fileUrl,
             location: location,
             user: req.user._id
         });
