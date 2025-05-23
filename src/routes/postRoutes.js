@@ -8,22 +8,24 @@ const router = express.Router();
 
 router.post("/register", protectRoute, async (req, res) => {
     try {
-        const { description, file, location } = req.body;
+        const { description, fileDataUrl, location } = req.body;
 
-        if (!description || !file) {
+        if (!description || !fileDataUrl) {
             console.log("All fileds must be provided")
             return res.status(400).json({ message: "Please fill all fields" });
         }
 
         // Upload the file to Cloudinary
-        const uploadToCloudiary = await cloudinary.uploader.upload(file)
+        const uploadToCloudiary = await cloudinary.uploader.upload(fileDataUrl, {
+            folder: "Kismist-posts",
+        })
         const fileUrl = uploadToCloudiary.secure_url;
 
        
         const newPost = new Post({
             description,
             file: fileUrl,
-            location,
+            location: location,
             user: req.user._id
         });
 

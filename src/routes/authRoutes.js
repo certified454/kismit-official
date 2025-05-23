@@ -102,17 +102,15 @@ router.post("/register", async (req, res) => {
                             padding: 30px;
                             background-color: #f5f5f5;
                             border-radius: 5px;
-                            box-shadow: 2px 2px 2px 2px rgb(122, 30, 189);
                         }
                         .footer {
-                            margin-top: 20px;
+                            margin-top: 25px;
                             padding: 10px;
                             background-color: #f5f5f5;
                             text-align: center;
                             font-size: 12px;
                             color: #777777;
                             border-radius: 5px;
-                            box-shadow: 2px 2px 2px 2px rgb(122, 30, 189);
                         }
                         h1 {
                             color: #4B0082;
@@ -321,17 +319,15 @@ router.post("/resend-code", async (req, res) => {
                             padding: 30px;
                             background-color: #f5f5f5;
                             border-radius: 5px;
-                            box-shadow: 2px 2px 2px 2px rgb(122, 30, 189);
                         }
                         .footer {
-                            margin-top: 20px;
+                            margin-top: 25px;
                             padding: 10px;
                             background-color: #f5f5f5;
                             text-align: center;
                             font-size: 12px;
                             color: #777777;
                             border-radius: 5px;
-                            box-shadow: 2px 2px 2px 2px rgb(122, 30, 189);
                         }
                         h1 {
                             color: #4B0082;
