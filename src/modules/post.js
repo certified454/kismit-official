@@ -3,12 +3,9 @@ import mongoose from "mongoose";
 const postSchema = new mongoose.Schema({
     description: {
         type: String,
-        required: true,
-        trim: true
     },
     file: {
         type: String,
-        required: true
     },
     location: {
         type: String,
@@ -24,8 +21,7 @@ const postSchema = new mongoose.Schema({
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+        ref: "User"
     },
 }, { timestamps: true });
 
