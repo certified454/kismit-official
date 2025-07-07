@@ -22,14 +22,19 @@ const upload = multer({
     }
 })
 
-router.post("/register", protectRoute, upload.single('file'),  async (req, res) => {
+router.post("/register", protectRoute,  async (req, res) => {
     try {
         const { description, location } = req.body;
         const file = req.file;
 
-        if (!description || !location || !file) {
-            console.log("All fileds must be provided")
-            return res.status(400).json({ message: "Please fill all fields" });
+        if (!description) {
+            console.log("Description must be provided")
+            return res.status(400).json({ message: "Enter description" });
+        }
+
+        if (!file) {
+            console.log("file must be provided")
+            return res.status(400).json({ message: "Choose a file" });
         }
         let fileUrl;
         if(file) {
@@ -38,7 +43,8 @@ router.post("/register", protectRoute, upload.single('file'),  async (req, res) 
                 folder: "kismit-post",
                 resource_type: "auto"
             });
-            fileUrl = uploadToClodinary.secure_uri
+            fileUrl = uploadToCloudinary.secure_url;
+            return fileUrl;
         }
 
         const newPost = new Post({
