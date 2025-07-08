@@ -1,5 +1,4 @@
 import express from 'express';
-import multer from 'multer';
 
 import Post from "../modules/post.js"
 import cloudinary from '../lib/cloudinary.js';
@@ -7,60 +6,31 @@ import protectRoute from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-const storage = multer.memoryStorage();
-const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024
-    },
-    fileFilter: (req, file, cb ) => {
-        if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/gif' || file.mimetype === 'video/mp4') {
-            cb(null, true)
-        } else {
-            cb(new Error('Invalid file type. Only PNG, JPEG, GIF and MP4 are allowed'))
-        }
-    }
-})
-
 router.post("/register", protectRoute,  async (req, res) => {
-    try {
-        const { description, location } = req.body;
-        const file = req.file;
+    try { 
+        const { caption, image } = req.body;
 
-        if (!description) {
-            console.log("Description must be provided")
-            return res.status(400).json({ message: "Enter description" });
+        if ( !caption || !image ) {
+            return res.status(400).json({message: "All fields are required"})
         }
+        
+        //upload image to cloudinary
+        const uploadResponse = await cloudinary.uploader.upload(image);
+        const imageUrl = uploadResponse.secure_url;
 
-        if (!file) {
-            console.log("file must be provided")
-            return res.status(400).json({ message: "Choose a file" });
-        }
-        let fileUrl;
-        if(file) {
-            const uploadSource = (storage === multer.memoryStorage()) ? file.buffer : file.path;
-            const uploadToCloudinary = await cloudinary.uploader.upload(uploadSource, {
-                folder: "kismit-post",
-                resource_type: "auto"
-            });
-            fileUrl = uploadToCloudinary.secure_url;
-            return fileUrl;
-        }
-
+        //save to data base
         const newPost = new Post({
-            description: description,
-            fileUrl: fileUrl,
-            location: location,
+            caption,
+            image: imageUrl,
             user: req.user._id
-        });
+        })
 
-        await newPost.save();
-        console.log("Post created successfully");
-        res.status(201).json({ message: "Post created successfully", newPost });
+        await newPost.save()
+        res.status(201).json(newPost)
 
     } catch (error) {
-        console.error(error, "error creating post");
-        res.status(500).json({ message: "error creating post" });
+        console.error(error, "error registering post");
+        res.status(500).json({ message: "error registering post" });
     }
 });
 

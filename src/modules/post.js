@@ -1,23 +1,13 @@
 import mongoose from "mongoose";
 
 const postSchema = new mongoose.Schema({
-    description: {
+    caption: {
         type: String,
+        required: true,
     },
-    file: {
+    image: {
         type: String,
-    },
-    location: {
-        type: String,
-        default: ""
-    },
-    likes: {
-        type: Number,
-        default: 0
-    },
-    comments: {
-        type: Number,
-        default: 0
+        required: true,
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,

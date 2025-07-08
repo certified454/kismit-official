@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({limit: '100mb'}));
 app.use(cors());
 app.use("/api/auth", authRoutes);
-app.use("/api/posts", postRoutes);
+app.use("/api/post", postRoutes);
 
 app.listen(PORT, () => {
     console.log('Server is running on port 3000');
