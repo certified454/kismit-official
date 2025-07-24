@@ -2,6 +2,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import "dotenv/config";
+import cloudinary from "../lib/cloudinary.js";
 
 import User from "../modules/user.js";
 
@@ -14,9 +15,13 @@ const generateToken = (userId) => {
 router.post("/register", async (req, res) => {
   try {
     const { username, email, password, profilePicture } = req.body;
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !profilePicture) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+    //upload profile picture to cloudinary
+    const uploadResponse = await cloudinary.uploader.upload(profilePicture);
+    const profilePictureUrl = uploadResponse.secure_url;
 
     if (password.length < 6) {
       return res
@@ -41,7 +46,7 @@ router.post("/register", async (req, res) => {
     const emailEmail = await User.findOne({ email });
     if (emailEmail)
       return res.status(400).json({ message: "User already exists" });
-    
+
     //generate verification code
     const generateVerificationCode = () => {
       return Math.floor(1000 + Math.random() * 9000).toString();
@@ -53,7 +58,7 @@ router.post("/register", async (req, res) => {
       username,
       email,
       password,
-      profilePicture,
+      profilePicture: profilePictureUrl,
       verificationCode,
       verificationCodeExpires,
       isVerified: false,
