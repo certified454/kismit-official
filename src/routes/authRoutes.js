@@ -13,7 +13,7 @@ const generateToken = (userId) => {
 
 router.post("/register", async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, profilePicture } = req.body;
     if (!username || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -41,10 +41,7 @@ router.post("/register", async (req, res) => {
     const emailEmail = await User.findOne({ email });
     if (emailEmail)
       return res.status(400).json({ message: "User already exists" });
-
-    const profilePicture =
-      "https://api.dicebear.com/6.x/initials/svg?seed=${username}";
-
+    
     //generate verification code
     const generateVerificationCode = () => {
       return Math.floor(1000 + Math.random() * 9000).toString();
