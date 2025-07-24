@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
     },  
     profilePicture: {
         type: String,
-        default: "https://api.dicebear.com/9.x/miniavs/svg?seed=George&backgroundType=gradientLinear&backgroundColor=b6e3f4,c0aede,ffdfbf"
+        default: ""
     },
     isVerified: {
         type: Boolean,

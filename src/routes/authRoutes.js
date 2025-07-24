@@ -15,6 +15,7 @@ const generateToken = (userId) => {
 router.post("/register", async (req, res) => {
   try {
     const { username, email, password, profilePicture } = req.body;
+    console.log ("Received profile picture", profilePicture)
     if (!username || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -43,10 +44,19 @@ router.post("/register", async (req, res) => {
     if (emailEmail)
       return res.status(400).json({ message: "User already exists" });
 
-    //save profilePicture to cloudinary
-    const uploadResp = await cloudinary.uploader.upload(profilePicture);
-    const profilePictureUrl = uploadResp.secure_url;
-
+    let profilePictureUrl = "";
+    if (profilePicture) {
+        try {
+          const uploadResp = await cloudinary.uploader.upload(profilePicture);
+          profilePictureUrl = uploadResp.secure_url;  
+          console.log("Profile uploaded to cloudinary", profilePictureUrl)  
+          } catch (error) {
+            console.log("Clodinary upload error", uploadResp);
+            return res.status(500).json({message: "Failed to upload profile to cloudinary"})
+          }
+   }  else {
+        profilePictureUrl = "https://api.dicebear.com/9.x/miniavs/svg?seed=George&backgroundType=gradientLinear&backgroundColor=b6e3f4,c0aede,ffdfbf"     
+      }
     
     //generate verification code
     const generateVerificationCode = () => {
