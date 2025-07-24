@@ -25,8 +25,10 @@ router.post("/register", protectRoute,  async (req, res) => {
             user: req.user._id
         })
 
+        const populatePost = await Post.findById(newPost._id).populate("user", "username profilePicture");
+
         await newPost.save()
-        res.status(201).json(newPost)
+        res.status(201).json(populatePost)
 
     } catch (error) {
         console.error(error, "error registering post");
