@@ -179,7 +179,7 @@ router.post("/register", async (req, res) => {
           _id: user._id,
           username: user.username,
           email: user.email,
-          profilePicture: profilePicture,
+          profilePicture: profilePictureUrl,
           isVerified: user.isVerified,
         },
       });
