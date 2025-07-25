@@ -15,14 +15,14 @@ router.post("/text", protectRoute, async (req, res) => {
 
         const newTextComment = new TextComment({
             text: text.trim(),
-            post: postId,
+            post: req.body.postId,
             user: req.user._id
         })
 
         await newTextComment.save();
 
         const populateComment = await newCommentCount.populate('user', 'username profilePicture')
-        const newCommentCount = await TextComment.countDocuments({ post: postId });
+        const newCommentCount = await TextComment.countDocuments({ post: req.body.postId});
         res.status(201).json({
             message: "Commemt is added ",
             comment: populateComment,

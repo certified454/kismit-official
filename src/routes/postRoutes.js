@@ -4,7 +4,6 @@ import Post from "../modules/post.js"
 import cloudinary from '../lib/cloudinary.js';
 import protectRoute from '../middleware/auth.middleware.js';
 import TextComment from '../modules/textcomment.js';
-import { create } from 'zustand';
 
 const router = express.Router();
 
