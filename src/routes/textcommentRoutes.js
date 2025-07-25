@@ -7,7 +7,7 @@ import user from "../modules/user.js";
 
 const router = express.Router();
 
-router.post("/textcomment", protectRoute, async (req, res) => {
+router.post("/text", protectRoute, async (req, res) => {
     try {
         const { text } = req.body;
 
