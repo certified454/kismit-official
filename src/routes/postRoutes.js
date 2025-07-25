@@ -3,6 +3,8 @@ import express from 'express';
 import Post from "../modules/post.js"
 import cloudinary from '../lib/cloudinary.js';
 import protectRoute from '../middleware/auth.middleware.js';
+import TextComment from '../modules/textcomment.js';
+import { create } from 'zustand';
 
 const router = express.Router();
 
@@ -40,11 +42,57 @@ router.get("/", protectRoute, async (req, res) => {
         const limit = req.query.limit || 10;
         const skip = (page - 1) * limit;
 
-        const posts = await Post.find()
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate("user", "username profilePicture");
+        const posts = await Post.aggregate([
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $skip: skip 
+            },
+            {
+                $limit: limit
+            },
+            {
+                $lookup: {
+                    from: 'textcomments',
+                    localField: '_id',
+                    foreignField: 'post',
+                    as: 'comments_data',
+                }
+            },
+            {
+                $addFields: {
+                    commentCount: { $size: '$comments_data' }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            {
+                $unwind: '$user'
+            },
+            {
+                $project: {
+                    comments_data: 0,
+                    _id: 1,
+                    caption: 1,
+                    image: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    user: {
+                        _id: 1,
+                        username: 1,
+                        profilePicture: 1
+                    },
+                    commentCount: 1
+                }
+            }
+        ]);
 
         console.log("Posts fetched successfully");
 

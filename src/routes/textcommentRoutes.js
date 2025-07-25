@@ -15,12 +15,19 @@ router.post("/text", protectRoute, async (req, res) => {
 
         const newTextComment = new TextComment({
             text: text.trim(),
-            post: req.body.postId,
+            post: postId,
             user: req.user._id
         })
 
         await newTextComment.save();
-        res.status(201).json(newTextComment);
+
+        const populateComment = await newCommentCount.populate('user', 'username profilePicture')
+        const newCommentCount = await TextComment.countDocuments({ post: postId });
+        res.status(201).json({
+            message: "Commemt is added ",
+            comment: populateComment,
+            newTextComment: newCommentCount
+        });
 
     } catch (error) {
         console.error(error, "error creating text comment");
@@ -36,8 +43,10 @@ router.get("/text/:postId", protectRoute, async (req, res) => {
         if (!textComment || textComment.length === 0) {
             return res.status(404).json({ message: "Comment on this post will be display here"})
         }
+        const commentCount = await TextComment.countDocuments({ post: postId });
+        const postWithComment = {...post.toObject(), commentCount};
 
-        res.status(200).json(textComment)
+        res.status(200).json(postWithComment)
     } catch (error) {
         console.error(error, "error fetching text comments");
         res.status(500).json({ message: "error fetching text comments" });
