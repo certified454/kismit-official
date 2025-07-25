@@ -29,7 +29,7 @@ router.post("/text", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/textcommet/:postId", protectRoute, async (req, res) => {
+router.get("/text/:postId", protectRoute, async (req, res) => {
     try {
         const textComment = await TextComment.find({ post: req.params.postId}).sort({ createdAt: -1}).populate("user", "username profilePicture")
 
@@ -45,7 +45,7 @@ router.get("/textcommet/:postId", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/textcomments", protectRoute, async (req, res) => {
+router.get("/text", protectRoute, async (req, res) => {
     try {
         const page = req.query.page || 1;
         const limit = req.query.limit || 10;
@@ -72,7 +72,7 @@ router.get("/textcomments", protectRoute, async (req, res) => {
     }
 }),
 
-router.delete("/textcomment/:id", protectRoute, async (req, res) => {
+router.delete("/text/:id", protectRoute, async (req, res) => {
     try {
         const comment = await TextComment.findById(req.params.id);
 
