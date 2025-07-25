@@ -3,6 +3,7 @@ import express from 'express';
 import protectRoute from '../middleware/auth.middleware.js';
 import Post from '../modules/post.js';
 import TextComment from '../modules/textcomment.js';
+import user from "../modules/user.js";
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ router.post("/textcomment", protectRoute, async (req, res) => {
     try {
         const { text } = req.body;
 
-        if ( !text ) return res.status(400).json({ message: "Comment field is empty"})
+        if ( !text ) return res.status(400).json({ message: "Text field is empty"})
 
         const newTextComment = new TextComment({
             text: text.trim(),
@@ -33,7 +34,7 @@ router.get("/textcommet/:postId", protectRoute, async (req, res) => {
         const textComment = await TextComment.find({ post: req.params.postId}).sort({ createdAt: -1}).populate("user", "username profilePicture")
 
         if (!textComment || textComment.length === 0) {
-            return res.status(404).json({ message: "Comment on this post will be displayed here"})
+            return res.status(404).json({ message: "Comment on this post will be display here"})
         }
 
         res.status(200).json(textComment)
