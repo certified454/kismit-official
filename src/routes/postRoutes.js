@@ -35,7 +35,7 @@ router.post("/register", protectRoute,  async (req, res) => {
     }
 });
 
-router.get("/posts", protectRoute, async (req, res) => {
+router.get("/", protectRoute, async (req, res) => {
     try {
         const page = req.query.page || 1;
         const limit = req.query.limit || 7;
@@ -98,7 +98,7 @@ router.get("/posts", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/:id", protectRoute, async (req, res) => {
+router.get("/post", protectRoute, async (req, res) => {
     try {
         const postId = req.params.id
 
