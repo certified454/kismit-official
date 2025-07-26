@@ -1,9 +1,9 @@
 import express from 'express';
 
 import Post from "../modules/post.js"
+import Comment from '../modules/comment.js';
 import cloudinary from '../lib/cloudinary.js';
 import protectRoute from '../middleware/auth.middleware.js';
-import TextComment from '../modules/textcomment.js';
 
 const router = express.Router();
 
@@ -38,7 +38,7 @@ router.post("/register", protectRoute,  async (req, res) => {
 router.get("/", protectRoute, async (req, res) => {
     try {
         const page = req.query.page || 1;
-        const limit = req.query.limit || 10;
+        const limit = req.query.limit || 7;
         const skip = (page - 1) * limit;
 
         const posts = await Post.aggregate([
@@ -53,19 +53,6 @@ router.get("/", protectRoute, async (req, res) => {
             },
             {
                 $lookup: {
-                    from: 'textcomments',
-                    localField: '_id',
-                    foreignField: 'post',
-                    as: 'comments_data',
-                }
-            },
-            {
-                $addFields: {
-                    commentCount: { $size: '$comments_data' }
-                }
-            },
-            {
-                $lookup: {
                     from: 'users',
                     localField: 'user',
                     foreignField: '_id',
@@ -77,18 +64,18 @@ router.get("/", protectRoute, async (req, res) => {
             },
             {
                 $project: {
-                    comments_data: 0,
                     _id: 1,
                     caption: 1,
                     image: 1,
                     createdAt: 1,
                     updatedAt: 1,
                     user: {
-                        _id: 1,
-                        username: 1,
-                        profilePicture: 1
+                        _id: '$user._id',
+                        username: '$user.username',
+                        profilePicture: '$user.profilePicture'
                     },
-                    commentCount: 1
+                    commenstCount: 1,
+                    likesCount: 1
                 }
             }
         ]);
@@ -96,7 +83,7 @@ router.get("/", protectRoute, async (req, res) => {
         console.log("Posts fetched successfully");
 
         const totalPosts = await Post.countDocuments();
-        if (!posts) {
+        if (!posts || posts.length === 0) {
             return res.status(404).json({ message: "No posts found" });
         }
         res.send({
@@ -111,10 +98,29 @@ router.get("/", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/user", protectRoute, async (req, res) => {
+router.get("/:id", protectRoute, async (req, res) => {
     try {
-        const posts = await Post.find({ user: req.user._id }).sort({ createdAt: -1});
-        res.json(posts);
+        const postId = req.params.id
+
+        const post = await Post.findById(postId)
+        .populate('user', 'username profilePicture')
+        .populate({
+            path: 'comments',
+            select: 'type text audioUrl user createdAt',
+            populate: {
+                path: 'user',
+                select: 'username profilePicture'
+            },
+            options: {
+                sort: { createdAt: -1}
+            }
+        })
+        .populate ({
+            path: 'likes',
+            select: 'username profilePicture'
+        })
+
+        res.json(post);
     } catch (error) {
         console.error(error, "error fetching user posts");
         res.status(500).json({ message: "error fetching user posts" });
@@ -123,27 +129,18 @@ router.get("/user", protectRoute, async (req, res) => {
 
 router.delete("/:id", protectRoute, async (req, res) => {
     try {
-        const post = await Post.findById(req.params.id);
+        const postId = req.params.id
+
+        const post = await Post.findById(postId);
         
         if (!post) return res.status(404).json({ message: "Post not found" });
 
         if (post.user.toString() !== req.user._id.toString())
             return res.status(401).json({ message: "Unauthorized" })
 
-        //delete the image from cloudinary
-        if (post.file && post.file.includes("cloudinary")) {
-            try {
-                const publicId = post.file.split("/").pop().split(".")[0];
-                await cloudinary.uploader.destroy(publicId);
-            } catch (error) {
-                console.error("Error deleting image from Cloudinary", error);
-                return res.status(500).json({ message: "Error deleting image from Cloudinary" });
-                
-            }
-        } 
-
-        await post.deletOne();
+        await post.deleteOne();
         res.json({ message: "Post deleyed Successfully" })
+        
     } catch (error) {
         console.error(error, "error deleting post");
         res.status(500).json({ message: "error deleting post" });
