@@ -98,7 +98,7 @@ router.get("/", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/post", protectRoute, async (req, res) => {
+router.get("/onepost", protectRoute, async (req, res) => {
     try {
         const postId = req.params.id
 
