@@ -90,7 +90,7 @@ router.get("/", protectRoute, async (req, res) => {
         console.log("Posts fetched successfully");
 
         const totalPosts = await Post.countDocuments();
-        if (!posts || posts.length === 0) {
+        if (!posts || post.length === 0) {
             return res.status(404).json({ message: "No posts found" });
         }
         res.send({
