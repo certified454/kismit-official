@@ -4,6 +4,7 @@ import Post from "../modules/post.js"
 import Comment from '../modules/comment.js';
 import cloudinary from '../lib/cloudinary.js';
 import protectRoute from '../middleware/auth.middleware.js';
+import { create } from 'zustand';
 
 const router = express.Router();
 
@@ -41,7 +42,14 @@ router.get("/", protectRoute, async (req, res) => {
         const limit = req.query.limit || 7;
         const skip = (page - 1) * limit;
 
-        const posts = await Post.aggregate([
+
+        const post = await Post.find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("user", "username profilePicture")
+        
+        const posts = await Post.find([
             {
                 $sort: { createdAt: -1 }
             },
