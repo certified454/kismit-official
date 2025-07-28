@@ -4,7 +4,6 @@ import Post from "../modules/post.js"
 import Comment from '../modules/comment.js';
 import cloudinary from '../lib/cloudinary.js';
 import protectRoute from '../middleware/auth.middleware.js';
-import { create } from 'zustand';
 
 const router = express.Router();
 
@@ -48,45 +47,45 @@ router.get("/", protectRoute, async (req, res) => {
         .skip(skip)
         .limit(limit)
         .populate("user", "username profilePicture")
-        
-        const posts = await Post.find([
-            {
-                $sort: { createdAt: -1 }
-            },
-            {
-                $skip: skip 
-            },
-            {
-                $limit: limit
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'user',
-                    foreignField: '_id',
-                    as: 'user'
-                }
-            },
-            {
-                $unwind: '$user'
-            },
-            {
-                $project: {
-                    _id: 1,
-                    caption: 1,
-                    image: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    user: {
-                        _id: '$user._id',
-                        username: '$user.username',
-                        profilePicture: '$user.profilePicture'
-                    },
-                    commenstCount: 1,
-                    likesCount: 1
-                }
-            }
-        ]);
+
+        // const posts = await Post.find([
+        //     {
+        //         $sort: { createdAt: -1 }
+        //     },
+        //     {
+        //         $skip: skip 
+        //     },
+        //     {
+        //         $limit: limit
+        //     },
+        //     {
+        //         $lookup: {
+        //             from: 'users',
+        //             localField: 'user',
+        //             foreignField: '_id',
+        //             as: 'user'
+        //         }
+        //     },
+        //     {
+        //         $unwind: '$user'
+        //     },
+        //     {
+        //         $project: {
+        //             _id: 1,
+        //             caption: 1,
+        //             image: 1,
+        //             createdAt: 1,
+        //             updatedAt: 1,
+        //             user: {
+        //                 _id: '$user._id',
+        //                 username: '$user.username',
+        //                 profilePicture: '$user.profilePicture'
+        //             },
+        //             commenstCount: 1,
+        //             likesCount: 1
+        //         }
+        //     }
+        // ]);
 
         console.log("Posts fetched successfully");
 
