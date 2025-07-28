@@ -42,7 +42,7 @@ router.get("/", protectRoute, async (req, res) => {
         const skip = (page - 1) * limit;
 
 
-        const post = await Post.find()
+        const posts = await Post.find()
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -90,7 +90,7 @@ router.get("/", protectRoute, async (req, res) => {
         console.log("Posts fetched successfully");
 
         const totalPosts = await Post.countDocuments();
-        if (!post || post.length === 0) {
+        if (!posts || posts.length === 0) {
             return res.status(404).json({ message: "No posts found" });
         }
         res.send({
