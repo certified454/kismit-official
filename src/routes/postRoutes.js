@@ -48,7 +48,7 @@ router.get("/", protectRoute, async (req, res) => {
         // .limit(limit)
         // .populate("user", "username profilePicture")
 
-        const posts = await Post.find([
+        const posts = await Post.aggregate([
             {
                 $sort: { createdAt: -1 }
             },
