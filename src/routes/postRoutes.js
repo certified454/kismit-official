@@ -37,7 +37,7 @@ router.post("/register", protectRoute,  async (req, res) => {
 
 router.get("/", protectRoute, async (req, res) => {
     try {
-        const page = req.query.page || 1;
+        const page = req.query.page;
         const limit = req.query.limit || 7;
         const skip = (page - 1) * limit;
 
