@@ -37,7 +37,7 @@ router.post("/register", protectRoute,  async (req, res) => {
 
 router.get("/", protectRoute, async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
+      const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 7;
         const skip = (page - 1) * limit;
 
@@ -90,9 +90,7 @@ router.get("/", protectRoute, async (req, res) => {
         console.log("Posts fetched successfully");
 
         const totalPosts = await Post.countDocuments();
-        if (!posts || posts.length === 0) {
-            return res.status(404).json({ message: "No posts found" });
-        }
+        
         res.send({
             posts,
             currentPage: page,
