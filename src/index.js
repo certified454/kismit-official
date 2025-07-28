@@ -14,7 +14,7 @@ app.use(express.json({limit: '100mb'}));
 app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/post", postRoutes);
-app.use("/api/comment", commentRoutes);
+app.use("/api", commentRoutes);
 
 app.listen(PORT, () => {
     console.log('Server is running on port 3000');

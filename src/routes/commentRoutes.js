@@ -7,21 +7,26 @@ import User from '../modules/user.js';
 
 const router = express.Router();
 
-router.post("/", protectRoute, async (req, res) => {
+router.post("/post/:postId/comment", protectRoute, async (req, res) => {
     try {
-        const { postId, text, audioUrl, type } = req.body;
+        const { postId } = req.params;
+        const { userId } = req.user._id
+        const { text, audioUrl } = req.body;
 
-        if (!postId || !type ) return res.status(400).json({ message: "Comment type must be provided in other to make a comment"})
+        if (!postId || !userId || (!text && !audioUrl) ) return res.status(400).json({ message: "Missing required fields"})
         
-        if (type === 'text' && !text ) return res.status(400).json({ message: "Text input cannot be empty"})
-        if (type === 'audio' && !audioUrl ) return res.status(400).json({ message: "You must add a record to comment"})
+        const post = await Post.findById(postId) 
+        if (!post) {
+            return res.status(404).json({message: "Post not found with the id"})
+        } else {
+            
+        }
 
         const newComment = new Comment({
             post: postId,
-            user: req.user._id,
-            type,
-            text: type === 'text' ? text : undefined,
-            audioUrl: type === 'audio' ? audioUrl : undefined,
+            user: userId,
+            text: text || null,
+            audioUrl: audioUrl || null
         })
 
         await newComment.save();
@@ -32,52 +37,26 @@ router.post("/", protectRoute, async (req, res) => {
             newComment
         });
     } catch (error) {
-        console.error(error, "error creating text comment");
-        res.status(500).json({ message: "error creating text comment" });
+        console.error(error, "error creating comment");
+        res.status(500).json({ message: 'Internal server error', error: error.message});
         
     }
 });
 
-// router.get("/comment/:postId", protectRoute, async (req, res) => {
-//     try {
-//         const comment = await Comment.find({ post: req.postId }).sort({ createdAt: -1}).populate("user", "username profilePicture")
+router.get("/post/:postId/comment", protectRoute, async (rep, res) =>{
+    try {
+        const { postId } = rep.params
 
-//         if (!comment || comment.length === 0) {
-//             return res.status(404).json({ message: "No comment yet... Be the first to comment on this post"})
-//         }
-//     } catch (error) {
-//         console.error(error, "error fetching text comments");
-//         res.status(500).json({ message: "error fetching text comments" });
-        
-//     }
-// });
+        const comments = await Comment.findOne({post: postId})
+        .sort({ createdAt: -1 })
+        .populate('user', 'username profilePicture')
 
-// router.get("/text", protectRoute, async (req, res) => {
-//     try {
-//         const page = req.query.page || 1;
-//         const limit = req.query.limit || 10;
-//         const skip = (page - 1) * limit;
-
-//         const textComments = await TextComment.find()
-//         .sort({ createdAt: -1})
-//         .skip(skip)
-//         .limit(limit)
-//         .populate("user", "username profilePicture")
-
-//         const totalTextComments = await TextComment.countDocuments();
-//         if (!textComments) return res.statsu(404).json({ message: "No comment yet on this post"})
-        
-//         res.send({
-//             textComments,
-//             totalTextComments,
-//             currentPage: page,
-//             totalPages: Math.ceil(totalTextComments / limit),
-//         })
-//     } catch (error) {
-//         console.error(error, "error fetching comments");
-//         res.status(500).json({ message: "error fetching comments" }); 
-//     }
-// }),
+        res.status(200).json({comments})
+    } catch (error) {
+        console.error("Error fetching comments", error)
+        res.status(500).json({ message: 'Internal server error', error: error.message })
+    }
+})
 
 router.delete("/:commentId", protectRoute, async (req, res) => {
     try {
