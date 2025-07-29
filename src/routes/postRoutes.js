@@ -103,29 +103,14 @@ router.get("/", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/onepost", protectRoute, async (req, res) => {
+router.get("/:postId", protectRoute, async (req, res) => {
+    const postId = req.params.postId
     try {
-        const postId = req.params.id
-
         const post = await Post.findById(postId)
         .populate('user', 'username profilePicture')
-        .populate({
-            path: 'comments',
-            select: 'type text audioUrl user createdAt',
-            populate: {
-                path: 'user',
-                select: 'username profilePicture'
-            },
-            options: {
-                sort: { createdAt: -1}
-            }
-        })
-        .populate ({
-            path: 'likes',
-            select: 'username profilePicture'
-        })
+        .populate('comment', 'text audioUrl')
 
-        res.json(post);
+        res.sed({post});
     } catch (error) {
         console.error(error, "error fetching user posts");
         res.status(500).json({ message: "error fetching user posts" });

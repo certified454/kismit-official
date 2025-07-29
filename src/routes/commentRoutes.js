@@ -7,7 +7,7 @@ import User from '../modules/user.js';
 
 const router = express.Router();
 
-router.post("/post/:postId/comment", protectRoute, async (req, res) => {
+router.post("/comment", protectRoute, async (req, res) => {
     try {
         const { postId } = req.params;
         const { userId } = req.user._id
@@ -43,7 +43,7 @@ router.post("/post/:postId/comment", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/post/:postId/comment", protectRoute, async (rep, res) =>{
+router.get("/:comment", protectRoute, async (rep, res) =>{
     try {
         const { postId } = rep.params
 
