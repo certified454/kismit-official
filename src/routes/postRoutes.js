@@ -110,7 +110,7 @@ router.get("/:postId", protectRoute, async (req, res) => {
         .populate('user', 'username profilePicture')
         .populate('comment', 'text audioUrl')
 
-        res.sed({post});
+        res.send({ post });
     } catch (error) {
         console.error(error, "error fetching user posts");
         res.status(500).json({ message: "error fetching user posts" });
