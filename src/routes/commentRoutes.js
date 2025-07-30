@@ -7,16 +7,18 @@ import User from '../modules/user.js';
 
 const router = express.Router();
 
-router.post("/comment", protectRoute, async (req, res) => {
+router.post("/post/:postId/comment", protectRoute, async (req, res) => {
     try {
         const { postId } = req.params;
         const { userId } = req.user._id
         const { text, audioUrl } = req.body;
 
         if (!postId || !userId || (!text && !audioUrl) ) return res.status(400).json({ message: "Missing required fields"})
+            console.log("messing required fields")
         
         const post = await Post.findById(postId) 
         if (!post) {
+            console.log("Post not found with the ids")
             return res.status(404).json({message: "Post not found with the id"})
         } else {
             
@@ -30,6 +32,7 @@ router.post("/comment", protectRoute, async (req, res) => {
         })
 
         await newComment.save();
+        console.log("comment save")
         await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 }})
 
         res.status(201).json({
