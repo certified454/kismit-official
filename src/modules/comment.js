@@ -4,7 +4,7 @@ const commentSchema = new mongoose.Schema({
     text:{
         type: String,
     },
-    audioUrl:{
+    audio:{
         type: String,
     },
     post: {

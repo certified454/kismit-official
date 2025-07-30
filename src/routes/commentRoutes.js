@@ -4,45 +4,46 @@ import protectRoute from '../middleware/auth.middleware.js';
 import Post from '../modules/post.js';
 import Comment from '../modules/comment.js';
 import User from '../modules/user.js';
+import cloudinary from '../lib/cloudinary.js';
 
 const router = express.Router();
 
 router.post("/post/:postId/comment", protectRoute, async (req, res) => {
     try {
-        const { postId } = req.params;
-        const { userId } = req.user._id
-        const { text, audioUrl } = req.body;
+        const postId = req.params.postId;
+        const { text, audio } = req.body;
 
-        if (!postId || !userId || (!text && !audioUrl) ) return res.status(400).json({ message: "Missing required fields"})
-            console.log("messing required fields")
-        
+
         const post = await Post.findById(postId) 
         if (!post) {
             console.log("Post not found with the ids")
             return res.status(404).json({message: "Post not found with the id"})
-        } else {
-            
+        } else if ( !text && !audio) {
+            console.log("Missing required fields")
+            return res.status(400).json({ message: "Missing required fields"})
+        }
+
+        // Save audio to cloudinary if provided
+        let audioUrl = null;
+        if (audio) {
+            const uploadedAudioToCloudinary = await cloudinary.uploader.upload(audio)
+            const audioUrl = uploadedAudioToCloudinary.secure_url;
         }
 
         const newComment = new Comment({
+            text: text.trim(),
+            audio: audioUrl,
             post: postId,
-            user: userId,
-            text: text || null,
-            audioUrl: audioUrl || null
+            user: req.user._id,
         })
 
         await newComment.save();
         console.log("comment save")
-        await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 }})
-
-        res.status(201).json({
-            message: "Commemt is added ",
-            newComment
-        });
+        
+        res.status(201).json(newComment);
     } catch (error) {
         console.error(error, "error creating comment");
         res.status(500).json({ message: 'Internal server error', error: error.message});
-        
     }
 });
 
