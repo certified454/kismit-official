@@ -26,7 +26,7 @@ router.post("/post/:postId/comment", protectRoute, async (req, res) => {
         // Save audio to cloudinary if provided
         let audioUrl = null;
         if (audio) {
-            const uploadedAudioToCloudinary = await cloudinary.uploader.upload(audioPath, {
+            const uploadedAudioToCloudinary = await cloudinary.uploader.upload(audio, {
                 resource_type: 'auto',
             });
             audioUrl = uploadedAudioToCloudinary.secure_url;
