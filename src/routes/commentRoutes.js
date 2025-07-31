@@ -8,7 +8,7 @@ import cloudinary from '../lib/cloudinary.js';
 
 const router = express.Router();
 
-router.post("/post/:postId/comment", protectRoute, async (req, res) => {
+router.post("/post/:postId", protectRoute, async (req, res) => {
     try {
         const postId = req.params.postId;
         const { text, audio } = req.body;
