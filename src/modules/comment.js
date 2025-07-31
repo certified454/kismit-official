@@ -19,7 +19,7 @@ const commentSchema = new mongoose.Schema({
 
 //ensure that at least text or audio is present base on the type
 commentSchema.pre('save', function(next) {
-    if (!this.text && !this.audioUrl){
+    if (!this.text && !this.audio){
         return next(new Error('Comment must have either text or audio recorded'))
     };
 
