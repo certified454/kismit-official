@@ -49,9 +49,9 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/:comment", protectRoute, async (rep, res) =>{
+router.get("/post/:postId", protectRoute, async (req, res) =>{
     try {
-        const { postId } = rep.params
+        const { postId } = req.params
 
         const comments = await Comment.findOne({post: postId})
         .sort({ createdAt: -1 })
