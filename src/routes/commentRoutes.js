@@ -5,6 +5,7 @@ import Post from '../modules/post.js';
 import Comment from '../modules/comment.js';
 import User from '../modules/user.js';
 import cloudinary from '../lib/cloudinary.js';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -21,16 +22,34 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
         } else if ( !text && !audio) {
             console.log("Missing required fields")
             return res.status(400).json({ message: "Missing required fields"})
+        } else if ( text && audio ){
+            console.log("You can only comment with text or audio at a time")
+            return res.status(400).json({message: " You can only comment with text or audio at a time"})
         }
 
         // Save audio to cloudinary if provided
         let audioUrl = null;
         if (audio) {
-            const uploadedAudioToCloudinary = await cloudinary.uploader.upload(audio, {
-                resource_type: 'auto',
-            });
-            audioUrl = uploadedAudioToCloudinary.secure_url;
-        }
+            const today = new Date();
+            today.setHours(0,0,0,0)
+            const audioCountAudio = await Comment.countDocuments(
+                {
+                    user: req.user._id,
+                    audio: {$ne: null},
+                    createdAt: {$gte: today}
+                }
+            )
+            if (audioCountAudio >= 3 ){
+                console.log("You've reached your daily audio comment limit. Please subscribe to continue using audio comments")
+                return res.status(400).json({message: "You've reached your daily audio comment limit. Please subscribe to continue using audio comments"})
+            } else {
+                    const uploadedAudioToCloudinary = await cloudinary.uploader.upload(audio, {
+                        resource_type: 'auto',
+                    });
+                    audioUrl = uploadedAudioToCloudinary.secure_url;
+                }
+
+            }
 
         const newComment = new Comment({
             text: text.trim(),
@@ -45,7 +64,7 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
         res.status(201).json(newComment);
     } catch (error) {
         console.error(error, "error creating comment");
-        res.status(500).json({ message: 'Internal server error', error: error.message});
+        return res.status(500).json({ message: 'Internal server error', error: error.message});
     }
 });
 
@@ -54,8 +73,19 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
+        const postId = req.params.postId
+
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            console.log('No comment yet be the first tocomment')
+            return res.status(400).json({message: "Be the first to comment"})
+        }
+
+        const postObjectId = mongoose.Types.ObjectId(postId);
 
         const comments = await Comment.aggregate([
+            {
+                $match: { post: postObjectId }
+            },
             { 
                 $sort: { createdAt: -1},
             },
@@ -93,8 +123,8 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
         ])
 
         console.log("Comments fetched successfully");
-        const totalComments = await Comment.countDocuments();
-        res.send({
+        const totalComments = await Comment.countDocuments({post: postObjectId});
+        return res.send({
             comments,
             currentPage: page,
             totalComments,
@@ -103,7 +133,7 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
         
     } catch (error) {
         console.error("Error fetching comments", error)
-        res.status(500).json({ message: 'Internal server error', error: error.message })
+        return res.status(500).json({ message: 'Internal server error', error: error.message })
     }
 })
 
