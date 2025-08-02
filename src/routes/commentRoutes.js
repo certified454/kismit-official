@@ -49,15 +49,57 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/post/:postId", protectRoute, async (req, res) =>{
+router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
     try {
-        const { postId } = req.params
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.quary.limit) || 20;
+        const skip = (page - 1) * limit;
 
-        const comments = await Comment.findOne({post: postId})
-        .sort({ createdAt: -1 })
-        .populate('user', 'username profilePicture')
-
-        res.status(200).json({comments})
+        const comments = await Comment.aggregate([
+            { 
+                $sort: { createdAt: -1},
+            },
+            {
+                $skip : skip
+            },
+            {
+                $limit: limit
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'user',
+                }
+            },
+            { 
+                $unwind: '$user'
+            },
+            {
+                project: {
+                    _id: 1,
+                    text: 1,
+                    audio: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    user: {
+                        _id: '$user._id',
+                        username: '$user.username',
+                        profilePicture: '$user.profilePicture'
+                    }
+                }
+            }
+        ])
+        console.log("Comments fetched successfully");
+        const totalComments = await Comment.countDocuments();
+        res.send({
+            comments,
+            currentPage: page,
+            totalComments,
+            totalPages: Math.ceil(totalComments / limit)
+        })
+        
     } catch (error) {
         console.error("Error fetching comments", error)
         res.status(500).json({ message: 'Internal server error', error: error.message })
