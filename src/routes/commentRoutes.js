@@ -80,7 +80,7 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
             return res.status(400).json({message: "Be the first to comment"})
         }
 
-        const postObjectId = mongoose.Types.ObjectId(postId);
+        const postObjectId = new mongoose.Types.ObjectId(postId);
 
         const comments = await Comment.aggregate([
             {
