@@ -70,14 +70,14 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
                     from: 'users',
                     localField: 'user',
                     foreignField: '_id',
-                    as: 'user',
+                    as: 'user'
                 }
             },
             { 
                 $unwind: '$user'
             },
             {
-                project: {
+                $project: {
                     _id: 1,
                     text: 1,
                     audio: 1,
@@ -91,6 +91,7 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
                 }
             }
         ])
+
         console.log("Comments fetched successfully");
         const totalComments = await Comment.countDocuments();
         res.send({
