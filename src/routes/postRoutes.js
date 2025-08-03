@@ -70,6 +70,19 @@ router.get("/", protectRoute, async (req, res) => {
                 $unwind: '$user'
             },
             {
+                $lookup: {
+                    from: 'comments',
+                    localField: '_id',
+                    foreignField: 'post',
+                    as: 'comments'
+                }
+            },
+            {
+                $addFields: {
+                    commentsCount: { $size: '$comments' }
+                }
+            },
+            {
                 $project: {
                     _id: 1,
                     caption: 1,
@@ -81,7 +94,7 @@ router.get("/", protectRoute, async (req, res) => {
                         username: '$user.username',
                         profilePicture: '$user.profilePicture'
                     },
-                    commenstCount: 1,
+                    commentsCount: 1,
                     likesCount: 1
                 }
             }
