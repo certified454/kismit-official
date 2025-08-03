@@ -67,6 +67,19 @@ router.get("/", protectRoute, async (req, res) => {
                 }
             },
             {
+                $lookup: {
+                    from: 'comments',
+                    localField: 'comment',
+                    foreignField: '_id',
+                    as: 'comments'
+                }
+            },
+            {
+                $addFields: {
+                    commenstCount: { $size: 'comments'}
+                }
+            },
+            {
                 $unwind: '$user'
             },
             {
