@@ -58,6 +58,8 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
             user: req.user._id,
         })
 
+        await Post.findByIdAndUpdate(postId, {$inc: { commentsCount: 1}})
+
         await newComment.save();
         console.log("comment save")
         
