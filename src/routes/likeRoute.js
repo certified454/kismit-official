@@ -1,6 +1,6 @@
 import express from 'express';
 
-import protectRoute from '../middleware/auth.middleware';
+import protectRoute from '../middleware/auth.middleware.js';
 import Post from '../modules/post';
 import Like from '../modules/like';
 import mongoose from 'mongoose';
