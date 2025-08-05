@@ -1,10 +1,10 @@
 import express from 'express';
 
 import protectRoute from '../middleware/auth.middleware.js';
-import Post from '../modules/post';
-import Like from '../modules/like';
+import Post from '../modules/post.js';
+import Like from '../modules/like.js';
 import mongoose from 'mongoose';
-import User from '../modules/user';
+import User from '../modules/user.js';
 
 const router = express.Router();
 
