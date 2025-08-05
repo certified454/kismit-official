@@ -152,6 +152,6 @@ router.delete("/:commentId", protectRoute, async (req, res) => {
         console.error(error, "error deleting comment")
         res.status(500).json({message: "error deleting comment"})
     }
-})
+});
 
 export default router;

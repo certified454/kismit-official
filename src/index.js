@@ -5,6 +5,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import commentRoutes from './routes/commentRoutes.js';
+import likeRoute from './routes/likeRoute.js';
 import { connectDB } from "./lib/db.js"
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/post", postRoutes);
 app.use("/api", commentRoutes);
+app.use("/api", likeRoute);
 
 app.listen(PORT, () => {
     console.log('Server is running on port 3000');
