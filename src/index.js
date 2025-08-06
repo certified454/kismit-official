@@ -12,13 +12,14 @@ import { connectDB } from "./lib/db.js"
 
 const app = express();
 const server = http.createServer(app);
-const io = new server(app, {
+const io = new Server(server, {
     cors: {
         origin: 'exp://10.92.156.82:8081',
         methods: ['GET', 'POST'],
         allowedHeaders: ['Content-Type', 'Authorization'],
     }
-})
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({limit: '100mb'}));
