@@ -47,6 +47,11 @@ io.on('connection', (socket) => {
         console.log('new like created:', newLike);
         io.emit('new lke created', {postId});
     });
+    // add likeDeleted event listener
+    socket.on('like deleted', (postId) => {
+        console.log('like deleted:', postId);
+        io.emit('like deleted', {postId});
+    });
     // disconnect event
     socket.on('disconnect', () => {
         console.log('Client disconnected', socket.id);

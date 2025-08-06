@@ -39,4 +39,24 @@ router.post('/post/:postId/like', protectRoute, async (req, res) => {
   }
 });
 
+router.delete('/post/:postId/like', protectRoute, async (req, res) => {
+  const postId = req.params.postId;
+  const userId = req.user._id;
+
+  try {
+    const like = await Like.findOneAndDelete({ post: postId, user: userId });
+    if (!like) {
+      return res.status(404).json({ message: "Like not found" });
+    }
+
+    await Post.findByIdAndUpdate(postId, { $inc: { likesCount: -1 } });
+
+    // Emit like deletion event
+    req.app.get('io').emit('like deleted', {postId});
+
+    return res.status(200).json({ message: 'Like removed successfully' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+})
 export default router;
