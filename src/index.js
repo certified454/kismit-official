@@ -19,6 +19,7 @@ const io = new Server(server, {
         allowedHeaders: ['Content-Type', 'Authorization'],
     }
 });
+app.set('io', io);
 
 const PORT = process.env.PORT || 3000;
 

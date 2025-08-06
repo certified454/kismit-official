@@ -27,6 +27,8 @@ router.post("/register", protectRoute,  async (req, res) => {
         })
 
         await newPost.save()
+        // emit new post event
+        req.app.get('io').emit('new post created', newPost);
         res.status(201).json(newPost)
 
     } catch (error) {
