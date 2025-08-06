@@ -63,7 +63,7 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
         await newComment.save();
 
         // Emit new comment event
-        req.app.get('io'.emit('new comment created', {postId}));
+        req.app.get('io').emit('new comment created', {postId});
         console.log("comment save")
         
         res.status(201).json(newComment);
