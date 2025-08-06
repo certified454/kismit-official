@@ -63,10 +63,22 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
         await newComment.save();
 
         // Emit new comment event
-        req.app.get('io').emit('new comment created', {postId});
-        console.log("comment save")
-        
-        res.status(201).json(newComment);
+        const populatedComment = await Comment.findById(newComment._id).populate('user', 'username profilePicture');
+        req.app.get('io').emit('new comment created', {
+        _id: populatedComment._id,
+        postId: populatedComment.post,
+        user: {
+            id: populatedComment.user._id,
+            username: populatedComment.user.username,
+            profilePicture: populatedComment.user.profilePicture
+        },
+        text: populatedComment.text,
+        audio: populatedComment.audio,
+        createdAt: populatedComment.createdAt
+        });
+
+        console.log("comment saved and emitted");
+        res.status(201).json(populatedComment);
     } catch (error) {
         console.error(error, "error creating comment");
         return res.status(500).json({ message: 'Internal server error', error: error.message});
