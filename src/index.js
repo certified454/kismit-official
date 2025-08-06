@@ -40,12 +40,12 @@ io.on('connection', (socket) => {
     // add newComment event listener
     socket.on('new comment created', (newComment) => {
         console.log('new comment created:', newComment);
-        io.emit('new comment created', newComment)
+        io.emit('new comment created', {postId})
     });
     // add newLike event listener
     socket.on('new like created', (newLike) => {
         console.log('new like created:', newLike);
-        io.emit('new lke created', newLike);
+        io.emit('new lke created', {postId});
     });
     // disconnect event
     socket.on('disconnect', () => {

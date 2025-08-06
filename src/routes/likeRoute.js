@@ -24,8 +24,11 @@ router.post('/post/:postId/like', protectRoute, async (req, res) => {
       like: 1
     });
 
-    await newLike.save();
     await Post.findByIdAndUpdate(postId, { $inc: { likesCount: 1 } });
+    await newLike.save();
+
+    // Emit new like event
+    req.app.get('io').emit('new like created', {postId});
 
     return res.status(201).json(newLike);
   } catch (error) {
