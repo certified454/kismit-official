@@ -11,7 +11,7 @@ import likeRoute from './routes/likeRoute.js';
 import { connectDB } from "./lib/db.js"
 
 const app = express();
-const server = Server.createServer(app);
+const server = http.createServer(app);
 const io = new server(app, {
     cors: {
         origin: 'exp://10.92.156.82:8081',
