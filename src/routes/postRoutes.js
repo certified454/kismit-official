@@ -43,13 +43,6 @@ router.get("/", protectRoute, async (req, res) => {
         const limit = parseInt(req.query.limit) || 7;
         const skip = (page - 1) * limit;
 
-
-        // const posts = await Post.find()
-        // .sort({ createdAt: -1 })
-        // .skip(skip)
-        // .limit(limit)
-        // .populate("user", "username profilePicture")
-
         const posts = await Post.aggregate([
             {
                 $sort: { createdAt: -1 }
