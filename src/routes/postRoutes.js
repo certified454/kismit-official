@@ -88,7 +88,12 @@ router.get("/", protectRoute, async (req, res) => {
             },
             {
                 $addFields: {
-                    commentsCount: { $size: '$comments' }
+                    commentsCount: { $size: '$comments' },
+                    likesCount: { $size: '$like' },
+                    liked: {
+                        $in: [req.user._id, '$like'],
+                        $ifNull: [true, false]
+                    }
                 }
             },
             {
@@ -131,8 +136,10 @@ router.get("/:postId", protectRoute, async (req, res) => {
         const post = await Post.findById(postId)
         .populate('user', 'username profilePicture')
         .populate('comment', 'text audioUrl')
+        
+        const liked = post.like.some((id) => id.toString() === req.user._id.toString()) 
 
-        res.send({ post });
+        res.send({ post, liked });
     } catch (error) {
         console.error(error, "error fetching user posts");
         res.status(500).json({ message: "error fetching user posts" });
