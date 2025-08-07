@@ -92,7 +92,7 @@ router.get("/", protectRoute, async (req, res) => {
                     commentsCount: { $size: '$comments' },
                     likesCount: { $size: { $ifNull: ['$like', []] } },
                     liked: {
-                        $in: [mongoose.Types.ObjectId(req.user._id), { $ifNull: ['$like', []] } ]
+                        $in: [req.user._id, { $ifNull: ['$like', []] } ]
                     }
                 }
             },
