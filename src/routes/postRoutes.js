@@ -38,6 +38,9 @@ router.post("/register", protectRoute,  async (req, res) => {
             },
             caption: populatedPost.caption,
             image: populatedPost.image,
+            commentsCount: populatedPost.commentsCount,
+            likesCount: populatedPost.likesCount,
+            createdAt: populatedPost.createdAt
         })
         console.log("Post save and emitted successfully");
         res.status(201).json(populatedPost);
