@@ -43,9 +43,9 @@ io.on('connection', (socket) => {
         io.emit('new comment created', {postId})
     });
     // add newLike event listener
-    socket.on('new like created', (newLike) => {
-        console.log('new like created:', newLike);
-        io.emit('new lke created', {postId});
+    socket.on('new like created', (postId, userId, liked) => {
+        console.log('new like created:', postId, userId, liked);
+        io.emit('new lke created', {postId, userId, liked});
     });
     // add likeDeleted event listener
     socket.on('like deleted', (postId) => {

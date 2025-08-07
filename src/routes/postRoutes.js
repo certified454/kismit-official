@@ -91,8 +91,7 @@ router.get("/", protectRoute, async (req, res) => {
                     commentsCount: { $size: '$comments' },
                     likesCount: { $size: '$like' },
                     liked: {
-                        $in: [req.user._id, '$like'],
-                        $ifNull: [true, false]
+                        $in: [req.user._id, '$like']
                     }
                 }
             },
