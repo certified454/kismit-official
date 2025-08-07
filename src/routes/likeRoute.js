@@ -24,14 +24,11 @@ router.post('/post/:postId/like', protectRoute, async (req, res) => {
     if (liked) {
       post.like.pull(userId);
       post.likesCount = Math.max(0, post.likesCount - 1);
-      await post.save();
-      return res.status(200).json({ message: "You have unliked this post" });
     } else {
       post.like.push(userId);
-      post.likesCount += 1;
-      await post.save();
-      return res.status(200).json({ message: "You have liked this post" });
+      post.likesCount += 1;      
     }
+    await post.save();
     // emit the likes event
     req.app.get('io').emit('new like created', {
       postId: post._id,
