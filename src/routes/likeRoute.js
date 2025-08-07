@@ -21,14 +21,23 @@ router.post('/post/:postId/like', protectRoute, async (req, res) => {
     //instead of retuning already liked post, we want to remove the user from the likes arrary
     const liked = post.like.includes(userId);
 
+    let update;
+    let message;
+
     if (liked) {
-      post.like.pull(userId);
-      post.likesCount = Math.max(0, post.likesCount - 1);
+      update = {
+        $pull: { like: userId },
+        $inc: { likesCount: -1} 
+      }
+      message = "You have unliked this post";
     } else {
-      post.like.push(userId);
-      post.likesCount += 1;      
+     update = {
+      $addToSet: { like: userId },
+      $inc: { likesCount: 1 }
+     }   
+       message = "You have liked this post";  
     }
-    await post.save();
+    const updatedPost = await Post.findByIdAndUpdate(postId, update, {new: true})
     // emit the likes event
     req.app.get('io').emit('new like created', {
       postId: post._id,
@@ -36,8 +45,8 @@ router.post('/post/:postId/like', protectRoute, async (req, res) => {
       liked: !liked
     });
     res.status(200).json({
-      message: liked ? "You have unliked this post" : "You have liked this post",
-      post,
+      message,
+      post: updatedPost,
       success: true
     }); 
   } catch (error) {
