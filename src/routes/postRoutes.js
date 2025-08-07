@@ -4,6 +4,7 @@ import Post from "../modules/post.js"
 import Comment from '../modules/comment.js';
 import cloudinary from '../lib/cloudinary.js';
 import protectRoute from '../middleware/auth.middleware.js';
+import { mongo } from 'mongoose';
 
 const router = express.Router();
 
@@ -89,9 +90,9 @@ router.get("/", protectRoute, async (req, res) => {
             {
                 $addFields: {
                     commentsCount: { $size: '$comments' },
-                    likesCount: { $size: '$like' },
+                    likesCount: { $size: { $ifNull: ['$like', []] } },
                     liked: {
-                        $in: [req.user._id, '$like']
+                        $in: [mongoose.Types.ObjectId(req.user._id), { $ifNull: ['$like', []] } ]
                     }
                 }
             },
