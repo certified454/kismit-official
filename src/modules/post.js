@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import Comment from './comment.js';
-import Like from './like.js';
 import Clodinary from '../lib/cloudinary.js'
 
 const postSchema = new mongoose.Schema({
@@ -20,6 +19,10 @@ const postSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Comment"
     },
+    like: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     commentsCount: {
         type: Number,
         default: 0,

@@ -28,8 +28,19 @@ router.post("/register", protectRoute,  async (req, res) => {
 
         await newPost.save()
         // emit new post event
-        req.app.get('io').emit('new post created', newPost);
-        res.status(201).json(newPost)
+        const populatedPost =await Post.findById(newPost._id).populate('user', 'username profilePicture');
+        req.app.get('io').emit('new post created', {
+            _id: populatedPost._id,
+            user: {
+                id: populatedPost.user._id,
+                username: populatedPost.user.username,
+                profilePicture: populatedPost.user.profilePicture
+            },
+            caption: populatedPost.caption,
+            image: populatedPost.image,
+        })
+        console.log("Post save and emitted successfully");
+        res.status(201).json(populatedPost);
 
     } catch (error) {
         console.error(error, "error registering post");
