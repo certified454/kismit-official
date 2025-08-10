@@ -27,7 +27,7 @@ router.post('/post/:postId/like', protectRoute, async (req, res) => {
     if (liked) {
       update = {
         $pull: { like: userId },
-        $inc: { likesCount: -1} 
+        $inc: { likesCount: -1 } 
       }
       message = "You have unliked this post";
     } else {

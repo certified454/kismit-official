@@ -33,6 +33,44 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    //add other optional fields user profile update
+    bio: {
+        type: String,
+        default: ""
+    },
+    fullName: {
+        type: String,
+        default: ""
+    },
+    location: {
+        type: String,
+        default: ""
+    },
+    gender: {
+        type: String,
+        enum: ['male', 'female', 'other'],
+        default: 'other'
+    },
+    hobbies: {
+        type: [String],
+        default: []
+    },
+    following: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    }],
+    followers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    }],
+    followersCount: {
+        type: Number,
+        default: 0
+    },
+    followingCount: {
+        type: Number,
+        default: 0
+    },
 }, { timestamps: true });
 
 //hash password before saving to database
