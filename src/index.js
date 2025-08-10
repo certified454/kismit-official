@@ -5,6 +5,7 @@ import http from "http";
 import { Server } from 'socket.io'
 
 import authRoutes from "./routes/authRoutes.js";
+import userProfileRoute from './routes/userProfileRoutes.js';
 import postRoutes from "./routes/postRoutes.js";
 import commentRoutes from './routes/commentRoutes.js';
 import likeRoute from './routes/likeRoute.js';
@@ -26,6 +27,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '100mb' }));
 app.use(cors());
 app.use("/api/auth", authRoutes);
+app.use("/api/user/profile", userProfileRoute);
 app.use("/api/post", postRoutes);
 app.use("/api", commentRoutes);
 app.use("/api", likeRoute);
@@ -46,6 +48,11 @@ io.on('connection', (socket) => {
     socket.on('new like created', (postId, userId, liked) => {
         console.log('new like created:', postId, userId, liked);
         io.emit('new like created', { postId, userId, liked });
+    });
+    // add newFollow event listener
+    socket.on('new follower', (userId, followerId, followed) => {
+        console.log('new follower:', userId, followerId, followed);
+        io.emit('new follower', { userId, followerId, followed });
     });
 
     // disconnect event

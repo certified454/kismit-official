@@ -1,10 +1,41 @@
+import express from "express";
 import mongoose from "mongoose";
-import express, { request } from "express";
 
-import protectRoute from "../middleware/auth.middleware";
-import User from "../modules/user.js";
+import User from '../modules/user.js';
+import protectRoute from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+router.get('/me', protectRoute, async (req, res) => {
+    const userObject = req.user._id
+
+    try {
+        const user = await User.findById(userObject).select('-password -verificationCode -dateOfBirth -phoneNumber');
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.json({success: true, user});
+    } catch (error) {
+        console.error(error, "Error fetching user profile");
+        res.status(500).json({ message: "Internal server error", success: false });
+    }
+});
+
+router.get('/:userId', protectRoute, async (req, res) => {
+  const userId = req.params.userId;
+    try {
+      const user = await User.findById(userId).select('-password -verificationCode -dateOfBirth -phoneNumber')
+      if (!user) {
+        console.log("User not found");
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.send(user)
+    } catch (error) {
+        console.error(error, "error fetching user");
+        res.status(500).json({ message: "error fetching user" });
+    }
+});
 
 router.post('/:userId/follow', protectRoute, async (req, res) => {
     const targetUserObjectId = req.params.userId;
@@ -24,7 +55,7 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         };
 
-        const followed = currentUser.follow.includes(targetUserObjectId);
+        const followed = currentUser.following.includes(targetUserObjectId);
 
         let update;
         let message;
