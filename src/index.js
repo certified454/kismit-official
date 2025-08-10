@@ -1,4 +1,4 @@
-import express from "express"; 
+import express from "express";
 import "dotenv/config";
 import cors from "cors";
 import http from "http";
@@ -14,7 +14,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'exp://10.30.219.1:8081',
+        origin: 'exp://10.172.168.188:8081',
         methods: ['GET', 'POST'],
         allowedHeaders: ['Content-Type', 'Authorization'],
     }
@@ -23,7 +23,7 @@ app.set('io', io);
 
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json({limit: '100mb'}));
+app.use(express.json({ limit: '100mb' }));
 app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/post", postRoutes);
@@ -40,12 +40,12 @@ io.on('connection', (socket) => {
     // add newComment event listener
     socket.on('new comment created', (newComment) => {
         console.log('new comment created:', newComment);
-        io.emit('new comment created', {postId})
+        io.emit('new comment created', { postId })
     });
     // add newLike event listener
     socket.on('new like created', (postId, userId, liked) => {
         console.log('new like created:', postId, userId, liked);
-        io.emit('new like created', {postId, userId, liked});
+        io.emit('new like created', { postId, userId, liked });
     });
 
     // disconnect event
