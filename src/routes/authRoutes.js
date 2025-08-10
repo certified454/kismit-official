@@ -32,6 +32,14 @@ router.post("/register", async (req, res) => {
         .json({ message: "Username must be at least 3 characters long" });
     }
 
+    if (username.length > 17) {
+      return res.status(400).json({message: "Username must be less than 17 characters long"})
+    }
+
+    if (!email.includes("@")) {
+      return res.status(400).json({ message: "Email is not valid" });
+    }
+
     //check if user already exists
     const existsingUser = await User.findOne({
       $or: [{ username }, { email }],
