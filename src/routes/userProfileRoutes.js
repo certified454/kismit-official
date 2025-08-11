@@ -6,7 +6,7 @@ import protectRoute from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.get('/:userId?', protectRoute, async (req, res) => {
+router.get('/:userId', protectRoute, async (req, res) => {
     // If userId param is present, fetch that user's profile
     // Otherwise, fetch the currently authenticated user's profile
     const userId = req.params.userId || req.user._id;
