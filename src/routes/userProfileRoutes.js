@@ -22,6 +22,7 @@ const router = express.Router();
 // fetch user by :userIf
 router.get('/:userId', protectRoute, async (req, res) => {
     const userId = req.params.userId;
+    const currentUserObjectId = req.user._id;
     try {
         const user = await User.findById(userId).select('-password -verificationCode -verificationCodeExpires -dateOfBirth -editProfile');
         if (!user)
