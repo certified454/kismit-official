@@ -6,18 +6,18 @@ import protectRoute from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 // first get an authenticated user's profile
-router.get('/me', protectRoute, async (req, res) => {
-    try {
-        const user = await User.findById(req.user._id).select('-password -verificationCode -verificationCodeExpires -dateOfBirth')
-        if (!user)
-            return res.status(404).json({ message: "User not found" })
+// router.get('/me', protectRoute, async (req, res) => {
+//     try {
+//         const user = await User.findById(req.user._id).select('-password -verificationCode -verificationCodeExpires -dateOfBirth')
+//         if (!user)
+//             return res.status(404).json({ message: "User not found" })
 
-        res.send({ user, success: true})
-    } catch (error) {
-       console.error(error, "Error fetching user profile");
-       res.status(500).json({ message: "Internal server error", success: false });
-    }
-});
+//         res.send({ user, success: true})
+//     } catch (error) {
+//        console.error(error, "Error fetching user profile");
+//        res.status(500).json({ message: "Internal server error", success: false });
+//     }
+// });
 
 // fetch user by :userIf
 router.get('/:userId', protectRoute, async (req, res) => {
@@ -27,7 +27,10 @@ router.get('/:userId', protectRoute, async (req, res) => {
         if (!user)
             return res.status(404).json({ message: "User not found" });
 
-        res.send({ user, success: true });
+        // keep the user updated if the comes back to follow a user that they have already followd
+        const followingUser = user.following.some((id) => id.toString() === currentUserObjectId.toString());
+
+        res.send({ user, followingUser, success: true });
     } catch (error) {
        console.error(error, "Error fetching user profile");
        res.status(500).json({ message: "Internal server error", success: false });
