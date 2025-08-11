@@ -53,13 +53,13 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
         };
 
         const followed = currentUser.following.includes(targetUserObjectId);
-        
+
         let message;
 
         if(followed){
             await User.findByIdAndUpdate(currentUserObjectId, {
                 $pull: { following: targetUserObjectId },
-                $inc: { followersCount: -1 }
+                $inc: { followingCount: -1 }
             }) 
             await User.findByIdAndUpdate(targetUserObjectId, {
                 $pull: { followers: currentUserObjectId },
@@ -69,7 +69,7 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
         } else {
             await User.findByIdAndUpdate(currentUserObjectId, {
                 $addToSet: { following: targetUserObjectId },
-                $inc: { followersCount: 1 }
+                $inc: { followingCount: 1 }
             }) 
             await User.findByIdAndUpdate(targetUserObjectId, {
                 $addToSet: { followers: currentUserObjectId },
