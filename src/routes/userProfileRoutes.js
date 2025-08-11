@@ -8,12 +8,9 @@ const router = express.Router();
 // first get an authenticated user's profile
 router.get('/me', protectRoute, async (req, res) => {
     try {
-        const user = await User.findById(req.user._id)
+        const user = await User.findById(req.user._id).select('-password -verificationCode -verificationCodeExpires -dateOfBirth')
         if (!user)
             return res.status(404).json({ message: "User not found" })
-        else if (user){
-            user = user.select('-password -verificationCode -verificationCodeExpires -dateOfBirth')
-        }
 
         res.send({ user, success: true})
     } catch (error) {
@@ -26,12 +23,9 @@ router.get('/me', protectRoute, async (req, res) => {
 router.get('/:userId', protectRoute, async (req, res) => {
     const userId = req.params.userId;
     try {
-        const user = await User.findById(userId)
+        const user = await User.findById(userId).select('-password -verificationCode -verificationCodeExpires -dateOfBirth -editProfile');
         if (!user)
             return res.status(404).json({ message: "User not found" });
-        else if(user) {
-            user = user.select('-password -verificationCode -verificationCodeExpires -dateOfBirth -editProfile');
-        }
 
         res.send({ user, success: true });
     } catch (error) {
