@@ -71,6 +71,10 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    editProfile: {
+        type: Boolean,
+        default: false
+    }
 }, { timestamps: true });
 
 //hash password before saving to database
