@@ -29,8 +29,10 @@ router.get('/:userId', protectRoute, async (req, res) => {
             return res.status(404).json({ message: "User not found" });
 
         // keep the user updated if the comes back to follow a user that they have already followd
-        const followingUser = user.following.some((id) => id.toString() === currentUserObjectId.toString());
-
+        const currentUser = await User.findById(currentUserObjectId);
+        const followingUser = currentUser.following.some(
+            (id) => id.toString() === userId.toString()
+        );
         res.send({ user, followingUser, success: true });
     } catch (error) {
        console.error(error, "Error fetching user profile");
