@@ -6,34 +6,20 @@ import protectRoute from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.get('/me', protectRoute, async (req, res) => {
-    const userObject = req.user._id
+router.get('/:userId?', protectRoute, async (req, res) => {
+    // If userId param is present, fetch that user's profile
+    // Otherwise, fetch the currently authenticated user's profile
+    const userId = req.params.userId || req.user._id;
 
     try {
-        const user = await User.findById(userObject).select('-password -verificationCode -dateOfBirth -phoneNumber');
+        const user = await User.findById(userId).select('-password -verificationCode -dateOfBirth -phoneNumber');
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-        res.json({success: true, user});
+        res.json({ success: true, user });
     } catch (error) {
         console.error(error, "Error fetching user profile");
         res.status(500).json({ message: "Internal server error", success: false });
-    }
-});
-
-router.get('/:userId', protectRoute, async (req, res) => {
-  const userId = req.params.userId;
-    try {
-      const user = await User.findById(userId).select('-password -verificationCode -dateOfBirth -phoneNumber')
-      if (!user) {
-        console.log("User not found");
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      res.send(user)
-    } catch (error) {
-        console.error(error, "error fetching user");
-        res.status(500).json({ message: "error fetching user" });
     }
 });
 
