@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { type } from "os";
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -71,9 +72,13 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    usernameLastChanged: {
+        type: Date,
+        default: Date.now
+    },
     editProfile: {
         type: Boolean,
-        default: false
+        default: true,
     }
 }, { timestamps: true });
 
