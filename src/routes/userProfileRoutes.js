@@ -43,7 +43,7 @@ router.put('/:userId', protectRoute, async (req, res) => {
             const timeSinceChanged = Date.now() - lastChanged;
             if (timeSinceChanged < TWENTY_DAYS_IN_MS) {
                 console.log("Username can only be changed once every 20 days");
-                res.status(404).json({error: "Username can only be changed once every 20 days"})
+                res.status(404).json({error: "Username can only be changed once every 20 days", success: false})
             } 
             user.username = username ?? user.username;
             user.usernameLastChanged = Date.now();
