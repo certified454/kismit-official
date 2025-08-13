@@ -19,12 +19,7 @@ router.get('/:userId', protectRoute, async (req, res) => {
         const followingUser = currentUser.following.some(
             (id) => id.toString() === userId.toString()
         );
-        // emit userProfileViewed event
-        const updatedUser = await User.findByIdAndUpdate(userId, { new: true })
-        req.app.get('io').emit('userProfileViewed', {
-            userId,
-            currentUserObjectId
-        });
+        
         res.send({ user, updatedUser, followingUser, success: true });
     } catch (error) {
        console.error(error, "Error fetching user profile");
@@ -63,6 +58,10 @@ router.put('/:userId', protectRoute, async (req, res) => {
         user.hobbies = hobbies ?? user.hobbies;
     
         await user.save();
+        req.app.get('io').emit('userProfileUpdated', {
+            userId,
+            updatedFields: { username, email, profilePicture, bio, fullName, location, gender, hobbies }
+        });
         res.status(200).json({message: 'User updated successfully', user, success: true});        
     } catch (error) {
         console.error(error, "failed updated user");
