@@ -55,9 +55,9 @@ io.on('connection', (socket) => {
         io.emit('new follower', { userId, followerId, followed });
     });
     // add getting user by Id event listener
-    socket.on('userProfileVied', ( userId, currentUserObjectId ) => {
-        console.log('userProfileVied:', userId, currentUserObjectId );
-        io.emit('userProfileVied', { userId, currentUserObjectId });
+    socket.on('userProfileUpdated', ( userId, updatedFields ) => {
+        console.log('userProfileUpdated:', userId, updatedFields );
+        io.emit('userProfileUpdated', { userId, updatedFields });
     });
 
     // disconnect event
