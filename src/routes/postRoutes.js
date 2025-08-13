@@ -130,7 +130,7 @@ router.get("/", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/:postId/user", protectRoute, async (req, res) => {
+router.get("/user/posts/", protectRoute, async (req, res) => {
     const userId = req.user._id;
     try {
         const post = await Post.findById({user: userId})
