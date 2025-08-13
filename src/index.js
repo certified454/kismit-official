@@ -54,6 +54,11 @@ io.on('connection', (socket) => {
         console.log('new follower:', userId, followerId, followed);
         io.emit('new follower', { userId, followerId, followed });
     });
+    // add getting user by Id event listener
+    socket.on('userProfileVied', ( userId, currentUserObjectId ) => {
+        console.log('userProfileVied:', userId, currentUserObjectId );
+        io.emit('userProfileVied', { userId, currentUserObjectId });
+    });
 
     // disconnect event
     socket.on('disconnect', () => {

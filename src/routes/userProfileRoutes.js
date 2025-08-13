@@ -19,7 +19,13 @@ router.get('/:userId', protectRoute, async (req, res) => {
         const followingUser = currentUser.following.some(
             (id) => id.toString() === userId.toString()
         );
-        res.send({ user, followingUser, success: true });
+        // emit userProfileViewed event
+        const updatedUser = await User.findByIdAndUpdate(userId, { new: true })
+        req.app.get('io').emit('userProfileViewed', {
+            userId,
+            currentUserObjectId
+        });
+        res.send({ user, updatedUser, followingUser, success: true });
     } catch (error) {
        console.error(error, "Error fetching user profile");
        res.status(500).json({ message: "Internal server error", success: false });

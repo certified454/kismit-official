@@ -55,6 +55,10 @@ const userSchema = new mongoose.Schema({
         type: [String],
         default: []
     },
+    phone: {
+        type: String,
+        default: ""
+    },
     following: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
