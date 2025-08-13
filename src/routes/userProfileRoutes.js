@@ -20,7 +20,7 @@ router.get('/:userId', protectRoute, async (req, res) => {
             (id) => id.toString() === userId.toString()
         );
         
-        res.send({ user, updatedUser, followingUser, success: true });
+        res.send({ user, followingUser, success: true });
     } catch (error) {
        console.error(error, "Error fetching user profile");
        res.status(500).json({ message: "Internal server error", success: false });
