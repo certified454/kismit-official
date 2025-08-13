@@ -130,18 +130,13 @@ router.get("/", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/user/posts/", protectRoute, async (req, res) => {
-    const userId = req.user._id;
+router.get("/user", protectRoute, async (req, res) => {
     try {
-        const post = await Post.findById({user: userId})
-        .sort({ createdAt: -1 })
-        .populate('user', 'username profilePicture')
-        .populate('comment', 'text audioUrl')
-
-        res.send({ post });
-    } catch (error) {
-        console.error(error, "error fetching user posts");
-        res.status(500).json({ message: "error fetching user posts" });
+    const posts = await Post.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (error) {
+    console.error("Get user posts error:", error.message);
+    res.status(500).json({ message: "Server error" });
     }
 })
 
