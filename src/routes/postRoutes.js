@@ -130,16 +130,6 @@ router.get("/", protectRoute, async (req, res) => {
     }
 });
 
-router.get("/user", protectRoute, async (req, res) => {
-    try {
-    const posts = await Post.find({ user: req.user._id }).sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (error) {
-    console.error("Get user posts error:", error.message);
-    res.status(500).json({ message: "Server error" });
-    }
-})
-
 router.get("/:postId", protectRoute, async (req, res) => {
     const postId = req.params.postId
     try {

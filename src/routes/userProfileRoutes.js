@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 
 import User from '../modules/user.js';
+import Post from '../modules/post.js';
 import protectRoute from "../middleware/auth.middleware.js";
 import { triggerAsyncId } from "async_hooks";
 
@@ -66,6 +67,19 @@ router.put('/:userId', protectRoute, async (req, res) => {
     } catch (error) {
         console.error(error, "failed updated user");
        res.status(500).json({ message: "Internal server error", success: false });
+    }
+})
+
+//fetch user posts and display them in a FlatList
+router.get('/:userId/posts', protectRoute, async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const posts = await Post.find({ user: userId}).sort({ createdAt: -1});
+        res.status(200).json({ posts, success: true });
+        console.log("User posts fetched successfully");
+    } catch (error) {
+        console.error(error, "Error fetching user posts");
+        res.status(500).json({ message: "Internal server error", success: false });
     }
 })
 
