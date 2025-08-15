@@ -53,6 +53,7 @@ router.put('/:userId', protectRoute, async (req, res) => {
         user.email = email ?? user.email;
         user.profilePicture = profilePicture ?? user.profilePicture;
         user.bio = bio ?? user.bio;
+        user.phone = phone ?? user.phone;
         user.fullName = fullName ?? user.fullName;
         user.location = location ?? user.location;
         user.gender = gender ?? user.gender;
