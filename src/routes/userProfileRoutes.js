@@ -31,7 +31,7 @@ router.get('/:userId', protectRoute, async (req, res) => {
 //Update a user route
 router.put('/:userId', protectRoute, async (req, res) => {
     const userId = req.params.userId;
-    const {username, email, profilePicture, bio, fullName, location, gender, hobbies} = req.body;
+    const {username, email, profilePicture, bio, phone, fullName, location, gender, hobbies} = req.body;
     //Lets get the previous data from the user input
     try {
          const user = await User.findById(userId).select('-password -verificationCode -verificationCodeExpires -dateOfBirth -editProfile');
