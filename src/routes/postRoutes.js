@@ -4,7 +4,6 @@ import Post from "../modules/post.js"
 import Comment from '../modules/comment.js';
 import cloudinary from '../lib/cloudinary.js';
 import protectRoute from '../middleware/auth.middleware.js';
-import { mongo } from 'mongoose';
 
 const router = express.Router();
 

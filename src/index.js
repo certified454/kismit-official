@@ -7,6 +7,7 @@ import { Server } from 'socket.io'
 import authRoutes from "./routes/authRoutes.js";
 import userProfileRoute from './routes/userProfileRoutes.js';
 import postRoutes from "./routes/postRoutes.js";
+import analysisRoutes from './routes/anaylsisRoutes.js';
 import commentRoutes from './routes/commentRoutes.js';
 import likeRoute from './routes/likeRoute.js';
 import { connectDB } from "./lib/db.js"
@@ -29,6 +30,7 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/user/profile", userProfileRoute);
 app.use("/api/post", postRoutes);
+app.use("/api/analysis", analysisRoutes);
 app.use("/api", commentRoutes);
 app.use("/api", likeRoute);
 
@@ -38,6 +40,10 @@ io.on('connection', (socket) => {
     socket.on('new post created', (newPost) => {
         console.log('new post created:', newPost);
         io.emit('new post created', newPost);
+    });
+    socket.on('new analysis created', (newAnalysis) => {
+        console.log('new analysis created:', newAnalysis);
+        io.emit('new analysis created', newAnalysis);
     });
     // add newComment event listener
     socket.on('new comment created', (newComment) => {
