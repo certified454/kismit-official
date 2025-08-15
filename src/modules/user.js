@@ -34,7 +34,6 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    //add other optional fields user profile update
     bio: {
         type: String,
         default: ""

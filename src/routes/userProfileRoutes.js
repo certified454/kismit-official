@@ -28,11 +28,10 @@ router.get('/:userId', protectRoute, async (req, res) => {
     }
 })
 
-//Update a user route
 router.put('/:userId', protectRoute, async (req, res) => {
     const userId = req.params.userId;
     const {username, email, profilePicture, bio, fullName, location, gender, hobbies, phone} = req.body;
-    //Lets get the previous data from the user input
+
     try {
          const user = await User.findById(userId).select('-password -verificationCode -verificationCodeExpires -dateOfBirth -editProfile');
         if (!user) {
@@ -50,9 +49,6 @@ router.put('/:userId', protectRoute, async (req, res) => {
             user.username = username ?? user.username;
             user.usernameLastChanged = Date.now();
         }
-        if ( phone !== undefined) {
-            user.phone = phone
-        }
         user.email = email ?? user.email;
         user.profilePicture = profilePicture ?? user.profilePicture;
         user.bio = bio ?? user.bio;
@@ -60,7 +56,8 @@ router.put('/:userId', protectRoute, async (req, res) => {
         user.location = location ?? user.location;
         user.gender = gender ?? user.gender;
         user.hobbies = hobbies ?? user.hobbies;
-      
+        user.phone = phone ?? user.phone;
+    
         await user.save();
         req.app.get('io').emit('userProfileUpdated', {
             userId,
@@ -73,7 +70,6 @@ router.put('/:userId', protectRoute, async (req, res) => {
     }
 })
 
-//fetch user posts and display them in a FlatList
 router.get('/:userId/posts', protectRoute, async (req, res) => {
     try {
         const userId = req.params.userId;
@@ -148,6 +144,55 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
             message: 'Internal server error',
             success: false
         })
+    }
+})
+
+router.get('/:userId/followers', protectRoute, async (req, res) => {
+    const userId = req.params.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    try {
+        if(!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({message: 'followthis user'})
+        }
+        const followerObjectId = new mongoose.Types.ObjectId(userId)
+        const followers = await User.aggregate([
+            {
+                $match: { _id: followerObjectId}
+            },
+            {
+                $project: {
+                    followers: { $slice: ['$followers', skip, limit] }
+                },
+            }, 
+            {
+                $unwind: '$followers'
+            }, 
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'followers',
+                    foreignField: '_id',
+                    as: 'followersList'
+                }
+            },
+            {
+                $unwind: '$followersList'
+            },
+            {
+                $project: {
+                    _id: '$followersList._id',
+                    username: '$followersList.username',
+                    profilePicture: '$followersList.profilePicture'
+                }
+            }
+        ])
+        res.statu(200).json({followers, success: true})
+    } catch (error) {
+        console.error('Error fetching followers:', error);
+        res.status(500).json({ message: 'Internal server error' });
+
     }
 })
 
