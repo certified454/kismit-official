@@ -154,7 +154,8 @@ router.get('/:userId/followers', protectRoute, async (req, res) => {
     const skip = (page - 1) * limit;
     try {
         if(!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({message: 'followthis user'})
+            console.log('No follower')
+            return res.status(400).json({message: 'follow this user'})
         }
         const followerObjectId = new mongoose.Types.ObjectId(userId)
         const followers = await User.aggregate([
@@ -189,11 +190,9 @@ router.get('/:userId/followers', protectRoute, async (req, res) => {
             }
         ])
         res.status(200).json({followers, success: true})
-        console.error('followers fetched', error);
     } catch (error) {
         console.error('Error fetching followers:', error);
-        res.status(500).json({ message: 'Internal server error' });
-
+        res.status(500).json({ message: 'Internal server error', success: false });
     }
 })
 
