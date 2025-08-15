@@ -31,7 +31,7 @@ router.get('/:userId', protectRoute, async (req, res) => {
 //Update a user route
 router.put('/:userId', protectRoute, async (req, res) => {
     const userId = req.params.userId;
-    const {username, email, profilePicture, bio, phone, fullName, location, gender, hobbies} = req.body;
+    const {username, email, profilePicture, bio, fullName, location, gender, hobbies, phone} = req.body;
     //Lets get the previous data from the user input
     try {
          const user = await User.findById(userId).select('-password -verificationCode -verificationCodeExpires -dateOfBirth -editProfile');
@@ -53,16 +53,16 @@ router.put('/:userId', protectRoute, async (req, res) => {
         user.email = email ?? user.email;
         user.profilePicture = profilePicture ?? user.profilePicture;
         user.bio = bio ?? user.bio;
-        user.phone = phone ?? user.phone;
         user.fullName = fullName ?? user.fullName;
         user.location = location ?? user.location;
         user.gender = gender ?? user.gender;
         user.hobbies = hobbies ?? user.hobbies;
+        user.phone = phone ?? user.phone;
     
         await user.save();
         req.app.get('io').emit('userProfileUpdated', {
             userId,
-            updatedFields: { username, email, profilePicture, bio, fullName, location, gender, hobbies }
+            updatedFields: { username, email, profilePicture, bio, fullName, location, gender, hobbies, phone }
         });
         res.status(200).json({message: 'User updated successfully', user, success: true});        
     } catch (error) {
