@@ -50,6 +50,9 @@ router.put('/:userId', protectRoute, async (req, res) => {
             user.username = username ?? user.username;
             user.usernameLastChanged = Date.now();
         }
+        if ( phone !== undefined) {
+            user.phone = phone
+        }
         user.email = email ?? user.email;
         user.profilePicture = profilePicture ?? user.profilePicture;
         user.bio = bio ?? user.bio;
@@ -57,8 +60,7 @@ router.put('/:userId', protectRoute, async (req, res) => {
         user.location = location ?? user.location;
         user.gender = gender ?? user.gender;
         user.hobbies = hobbies ?? user.hobbies;
-        user.phone = phone ?? user.phone;
-    
+      
         await user.save();
         req.app.get('io').emit('userProfileUpdated', {
             userId,
