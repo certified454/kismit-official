@@ -196,5 +196,54 @@ router.get('/:userId/followers', protectRoute, async (req, res) => {
         res.status(500).json({ message: 'Internal server error', success: false });
     }
 })
+router.get('/:userId/following', protectRoute, async (req, res) => {
+    const userId = req.params.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    try {
+        if(!mongoose.Types.ObjectId.isValid(userId)) {
+            console.log('no user found')
+            return res.status(400).json({message: 'no user found'})
+        }
+        const followingObjectId = new mongoose.Types.ObjectId(userId)
+        const following = await User.aggregate([
+            {
+                $match: { _id: followingObjectId}
+            },
+            {
+                $project: {
+                    following: { $slice: ['$following', skip, limit] }
+                },
+            }, 
+            {
+                $unwind: '$following'
+            }, 
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'following',
+                    foreignField: '_id',
+                    as: 'followingList'
+                }
+            },
+            {
+                $unwind: '$followingList'
+            },
+            {
+                $project: {
+                    _id: '$followingList._id',
+                    username: '$followingList.username',
+                    profilePicture: '$followingList.profilePicture'
+                }
+            }
+        ])
+        res.status(200).json({following, success: true})
+        console.log(following, "following users are fetched")
+    } catch (error) {
+        console.error('Error fetching followed users:', error);
+        res.status(500).json({ message: 'Internal server error', success: false });
+    }
+})
 
 export default router;
