@@ -188,7 +188,7 @@ router.get('/:userId/followers', protectRoute, async (req, res) => {
                 }
             }
         ])
-        res.statu(200).json({followers, success: true})
+        res.status(200).json({followers, success: true})
     } catch (error) {
         console.error('Error fetching followers:', error);
         res.status(500).json({ message: 'Internal server error' });
