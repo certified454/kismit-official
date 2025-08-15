@@ -13,7 +13,9 @@ router.post('/register', protectRoute, async (req, res) => {
             return res.status(400).json({message: 'All fields are required'})
         }
 
-        const uploadVedioResponse = await cloudinary.uploader.upload(video);
+        const uploadVedioResponse = await cloudinary.uploader.upload(video, {
+            resource_type: 'auto'
+        });
         const videoUrl = uploadVedioResponse.secure_url;
 
         const newAnalysis = new Analysis({
