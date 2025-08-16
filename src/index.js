@@ -30,6 +30,7 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/user/profile", userProfileRoute);
 app.use("/api/post", postRoutes);
+//fixed
 app.use("/api/analysis", anaylsisRoutes);
 app.use("/api", commentRoutes);
 app.use("/api", likeRoute);
