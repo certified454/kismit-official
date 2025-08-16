@@ -24,6 +24,7 @@ router.post('/register', protectRoute, async (req, res) => {
             user: req.user._id
         })
         await newAnalysis.save();
+        console.log(newAnalysis)
 
         const populatedAnalysis = await Analysis.findById(newAnalysis._id).populate('user', 'username profilePicture')
         req.app.get('io').emit('new analysis created', {
@@ -37,7 +38,6 @@ router.post('/register', protectRoute, async (req, res) => {
             video: populatedAnalysis.video,
             createdAt: populatedAnalysis.createdAt
         })
-        console.log('Analysis is save and emited', populatedAnalysis)
         res.status(200).json({populatedAnalysis, success: true})
     } catch (error) {
         res.status(201).json({message: 'error creating an analysis'})
