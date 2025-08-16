@@ -6,7 +6,6 @@ const AnalysisSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         ref: 'User'
     },
-    //
     title: {
         type: String,
         default: ''
