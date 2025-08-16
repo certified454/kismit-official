@@ -9,15 +9,13 @@ const AnalysisSchema = new mongoose.Schema({
     //
     title: {
         type: String,
-        default: '',
-        required: true
+        default: ''
     },
     video: {
         type: String,
-        required: true
     },
 },{timestamps: true})
 
-const Analysis = mongoose.Model('Analysis', AnalysisSchema);
+const Analysis = mongoose.model('Analysis', AnalysisSchema);
 
 export default Analysis;
