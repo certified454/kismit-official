@@ -1,7 +1,7 @@
 import express from "express";
-import protectRoute from "../middleware/auth.middleware";
-import cloudinary from "../lib/cloudinary";
-import Analysis from "../modules/analysis";
+import protectRoute from "../middleware/auth.middleware.js";
+import cloudinary from "../lib/cloudinary.js";
+import Analysis from "../modules/analysis.js";
 
 const router = express.Router();
 
