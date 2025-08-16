@@ -37,7 +37,7 @@ router.post('/register', protectRoute, async (req, res) => {
             video: populatedAnalysis.video,
             createdAt: populatedAnalysis.createdAt
         })
-        console.log('Analysis is save and emited')
+        console.log('Analysis is save and emited', populatedAnalysis)
         res.status(200).json({populatedAnalysis, success: true})
     } catch (error) {
         res.status(201).json({message: 'error creating an analysis'})
