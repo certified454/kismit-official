@@ -1,21 +1,21 @@
-import mongoose from "mongoose";
-import cloudinary from "../lib/cloudinary";
+import mongoose from 'mongoose';
 
-const AnalysisSchema = new mongoose.Schema({
-    user: {
-        type: mongoose.Types.ObjectId,
-        ref: 'User'
-    },
-    //
+const analysisSchema = new mongoose.Schema({
     title: {
         type: String,
-        default: ''
+        required: true
     },
     video: {
         type: String,
+        required: true
     },
-},{timestamps: true})
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+}, { timestamps: true });
 
-const Analysis = mongoose.model('Analysis', AnalysisSchema);
+const Analysis = mongoose.model('Analysis', analysisSchema);
 
 export default Analysis;
