@@ -1,8 +1,8 @@
 import express from "express";
-import protectRoute from "../middleware/auth.middleware.js";
-import cloudinary from "../lib/cloudinary.js";
-import Analysis from "../modules/analysis.js";
-
+import protectRoute from '../middleware/auth.middleware.js';
+import User from '../modules/user.js';
+import cloudinary from '../lib/cloudinary.js';
+import mongoose from 'mongoose';
 const router = express.Router();
 
 router.post('/register', protectRoute, async (req, res) => {
