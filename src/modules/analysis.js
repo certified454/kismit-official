@@ -11,6 +11,14 @@ const analysisSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    like: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    likesCounts: {
+        type: Number,
+        default: 0
+    }
 }, { timestamps: true });
 
 const Analysis = mongoose.model('Analysis', analysisSchema);
