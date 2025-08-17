@@ -51,10 +51,6 @@ router.get('/', protectRoute, async (req, res) => {
 
         const analysis = await Analysis.aggregate([
             {
-                //sort analysis radomly not by newly created once
-                $sample: { size: limit + skip }
-            },
-            {
                 $skip: skip
             },
             {
