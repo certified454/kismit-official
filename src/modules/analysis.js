@@ -2,17 +2,14 @@ import mongoose from 'mongoose';
 
 const analysisSchema = new mongoose.Schema({
     title: {
-        type: String,
-        required: true
+        type: String
     },
     video: {
-        type: String,
-        required: true
+        type: String
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        ref: 'User'
     },
 }, { timestamps: true });
 

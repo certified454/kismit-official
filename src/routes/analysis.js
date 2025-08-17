@@ -9,9 +9,8 @@ const router = express.Router();
 router.post('/register', protectRoute, async (req, res) => {
     try {
         const { title, video } = req.body;
-        if (!title || !video) {
-            console.log('All fields are required')
-            return res.status(400).json({message: 'All fields are required'})
+        if (!title && !video) {
+            return res.status(400).json({ error: 'Title and video are required' });
         }
 
         const videoUrl = video;
