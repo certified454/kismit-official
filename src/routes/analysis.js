@@ -3,7 +3,7 @@ import protectRoute from '../middleware/auth.middleware.js';
 import User from '../modules/user.js';
 import cloudinary from '../lib/cloudinary.js'
 import Analysis from '../modules/analysis.js';
-import mongoose from 'mongoose';
+import mongoose, { mongo } from 'mongoose';
 const router = express.Router();
 
 router.post('/register', protectRoute, async (req, res) => {
@@ -39,6 +39,64 @@ router.post('/register', protectRoute, async (req, res) => {
     } catch (error) {
         console.error('Error creating analysis:', error);
         res.status(500).json({error: 'error creating an analysis'})
+    }
+})
+
+router.get('/', protectRoute, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+        const analysisId = req.params.analysisId;
+
+        const analysis = await Analysis.aggregate([
+            {
+                //sort analysis radomly not by newly created once
+                $sample: { size: limit + skip }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            {
+                $unwind: '$user'
+            },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    video: 1,
+                    createdAt: 1,
+                    user: {
+                        id: '$user._id',
+                        username: '$user.username',
+                        profilePicture: '$user.profilePicture'
+                    }
+                }
+            }
+        ])
+        console.log(analysis, 'analysis fetched successfully')
+
+        const totalAnlysis = await Analysis.countDocuments();
+        res.send({
+            analysis,
+            currentPage: page,
+            totalAnlysis,
+            totalPages: Math.ceil(totalAnlysis / limit)
+        })
+    } catch (error) {
+        console.error('Error fetching analysis:', error);
+        res.status(500).json({error: 'Internal server error'})
     }
 })
 export default router;
