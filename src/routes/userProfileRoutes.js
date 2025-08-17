@@ -5,6 +5,7 @@ import User from '../modules/user.js';
 import Post from '../modules/post.js';
 import protectRoute from "../middleware/auth.middleware.js";
 import { triggerAsyncId } from "async_hooks";
+import Analysis from "../modules/analysis.js";
 
 const router = express.Router();
 const TWENTY_DAYS_IN_MS = 20 * 24 *  60 * 60 * 1000;
@@ -79,6 +80,17 @@ router.get('/:userId/posts', protectRoute, async (req, res) => {
     } catch (error) {
         console.error(error, "Error fetching user posts");
         res.status(500).json({ message: "Internal server error", success: false });
+    }
+})
+router.get('/:userId/analysis', protectRoute, async ( req, res) =>{
+    try{
+        const userId = req.params.userId;
+        const analysis = await Analysis.find({ user: userId}).sort({ createdAt: -1});
+        res.status(200).json({message: 'User analysis fetched', success: true, analysis});
+        console.log({message: 'user analysis fetched'})
+    } catch (error) {
+        console.error(error, "Internal server error ")
+        res.status(500).json({message: 'Internal sever error'})
     }
 })
 
