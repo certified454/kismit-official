@@ -9,6 +9,7 @@ import userProfileRoute from './routes/userProfileRoutes.js';
 import postRoutes from "./routes/postRoutes.js";
 import anaylsisRoutes from './routes/analysis.js';
 import commentRoutes from './routes/commentRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
 import likeRoute from './routes/likeRoute.js';
 import { connectDB } from "./lib/db.js"
 
@@ -32,6 +33,7 @@ app.use("/api/user/profile", userProfileRoute);
 app.use("/api/post", postRoutes);
 app.use("/api/analysis", anaylsisRoutes);
 app.use("/api", commentRoutes);
+app.use("/api", searchRoutes);
 app.use("/api", likeRoute);
 
 io.on('connection', (socket) => {
