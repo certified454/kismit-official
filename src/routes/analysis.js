@@ -14,10 +14,7 @@ router.post('/register', protectRoute, async (req, res) => {
             return res.status(400).json({message: 'All fields are required'})
         }
 
-        const uploadVedioResponse = await cloudinary.uploader.upload(video, {
-            resource_type: 'auto'
-        });
-        const videoUrl = uploadVedioResponse.secure_url;
+        const videoUrl = video;
 
         const newAnalysis = new Analysis({
             title,
@@ -25,7 +22,7 @@ router.post('/register', protectRoute, async (req, res) => {
             user: req.user._id
         })
         await newAnalysis.save();
-        console.log(newAnalysis)
+        console.log(newAnalysis, 'new analysis created')
 
         const populatedAnalysis = await Analysis.findById(newAnalysis._id).populate('user', 'username profilePicture')
         req.app.get('io').emit('new analysis created', {
@@ -41,7 +38,8 @@ router.post('/register', protectRoute, async (req, res) => {
         })
         res.status(200).json({populatedAnalysis, success: true})
     } catch (error) {
-        res.status(201).json({message: 'error creating an analysis'})
+        console.error('Error creating analysis:', error);
+        res.status(500).json({error: 'error creating an analysis'})
     }
 })
 export default router;
