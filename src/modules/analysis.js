@@ -18,7 +18,7 @@ const analysisSchema = new mongoose.Schema({
     likesCounts: {
         type: Number,
         default: 0
-    }
+    },
 }, { timestamps: true });
 
 const Analysis = mongoose.model('Analysis', analysisSchema);

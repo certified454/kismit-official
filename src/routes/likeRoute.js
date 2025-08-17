@@ -55,7 +55,7 @@ router.post('/post/:postId/like', protectRoute, async (req, res) => {
   }
 }),
 
-router.post('/post/:analysisId/like', protectRoute, async (req, res) => {
+router.post('/analysis/:analysisId/like', protectRoute, async (req, res) => {
   const analysisId = req.params.analysisId;
   const userId = req.user._id;
 

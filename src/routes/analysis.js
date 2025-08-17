@@ -51,6 +51,9 @@ router.get('/', protectRoute, async (req, res) => {
 
         const analysis = await Analysis.aggregate([
             {
+                $sort: { createdAt: -1}
+            },
+            {
                 $skip: skip
             },
             {
@@ -68,6 +71,12 @@ router.get('/', protectRoute, async (req, res) => {
                 $unwind: '$user'
             },
             {
+                $addFields: {
+                    likesCount: { $size: { $ifNull: ['$like', []] } },
+                    liked: { $in: [req.user._id, { $ifNull: ['$like', []] } ] }
+                }
+            },
+            {
                 $project: {
                     _id: 1,
                     title: 1,
@@ -77,7 +86,8 @@ router.get('/', protectRoute, async (req, res) => {
                         id: '$user._id',
                         username: '$user.username',
                         profilePicture: '$user.profilePicture'
-                    }
+                    },
+                    likesCount: 1
                 }
             }
         ])
@@ -92,6 +102,22 @@ router.get('/', protectRoute, async (req, res) => {
         })
     } catch (error) {
         console.error('Error fetching analysis:', error);
+        res.status(500).json({error: 'Internal server error'})
+    }
+})
+
+router.get('/:analysisId', protectRoute, async (req, res) => {
+    const analysisId = req.param.analysisId;
+    try {
+        const analysis = await Analysis.findById(analysisId)
+        .populate('user', 'username profilePicture')
+
+        const liked= analysis.like.some((id) => id.toString() === req.user._id.toString());
+        res.send({
+            analysis, liked, success: true
+        })
+    } catch (error) {
+        console.log('Failed to get')
         res.status(500).json({error: 'Internal server error'})
     }
 })
