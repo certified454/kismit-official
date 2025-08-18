@@ -16,7 +16,7 @@ router.get('/search', protectRoute, async (req, res) => {
         };
 
         const userSearch = await User.find({ username: { $regex: query, $option: 'i' } });
-        if(!userSearch){
+        if(userSearch.length === 0){
             return res.status(200).json({message: 'No user match the search'})
         }
         console.log({message: "search fetched"})
