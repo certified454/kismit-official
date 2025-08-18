@@ -11,15 +11,15 @@ router.get('/search', protectRoute, async (req, res) => {
     const query = req.query.q;
 
     try {
-        if(!query) {
-        return res.status({message: 'Missing Search query'})
+        if (!query) {
+            return res.status({ message: 'Missing Search query' })
         };
 
-        const userSearch = await User.find({ username: { $regex: query, $option: 'i' } });
-        if(userSearch.length === 0){
-            return res.status(200).json({message: 'No user match the search'})
+        const userSearch = await User.find({ username: { $regex: query, $options: 'i' } });
+        if (userSearch.length === 0) {
+            return res.status(200).json({ message: 'No user match the search' })
         }
-        console.log({message: "search fetched"})
+        console.log({ message: "search fetched" })
         res.status(200).json(userSearch)
     } catch (error) {
         console.error(error, "Internal server error")
