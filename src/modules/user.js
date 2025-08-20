@@ -66,6 +66,10 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     }],
+    fcmTokens: {
+        type: String,
+        default: ''
+    },
     followersCount: {
         type: Number,
         default: 0

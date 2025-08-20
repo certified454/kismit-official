@@ -6,6 +6,7 @@ import Post from '../modules/post.js';
 import protectRoute from "../middleware/auth.middleware.js";
 import { triggerAsyncId } from "async_hooks";
 import Analysis from "../modules/analysis.js";
+import admin from "../lib/firebaseAdmin.js";
 
 const router = express.Router();
 const TWENTY_DAYS_IN_MS = 20 * 24 *  60 * 60 * 1000;
@@ -136,6 +137,22 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
                 $inc: { followersCount: 1 }
             }) 
             message = 'You followed this user'
+        }
+        // send a push notification to the targeted user
+        if(targetUser.fcmTokens) {
+            await admin.messaging().send({
+                token: targetUser.fcmTokens,
+                notification :{
+                    title: 'New Follower',
+                    body: `${currentUser.username} started following you`
+                },
+                android: {
+                    notification: {
+                        channelId: 'fdefault',
+                        sound: 'default'
+                    }
+                }
+            })
         }
         //update the targeted user on a newfollower
         const updatedUser = await User.findByIdAndUpdate(targetUserObjectId)
