@@ -4,7 +4,6 @@ import mongoose from "mongoose";
 import User from '../modules/user.js';
 import Post from '../modules/post.js';
 import protectRoute from "../middleware/auth.middleware.js";
-import { triggerAsyncId } from "async_hooks";
 import Analysis from "../modules/analysis.js";
 import admin from "../lib/firebaseAdmin.js";
 
@@ -154,6 +153,7 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
                 }
             })
         }
+        console.log('Push notification sent to the user', targetUser.fcmTokens);
         //update the targeted user on a newfollower
         const updatedUser = await User.findByIdAndUpdate(targetUserObjectId)
         req.app.get('io').emit('new follower', {
