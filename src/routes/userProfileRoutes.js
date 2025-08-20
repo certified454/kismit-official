@@ -94,6 +94,28 @@ router.get('/:userId/analysis', protectRoute, async ( req, res) =>{
     }
 })
 
+//register a router to update user token 
+router.post('/:userId/updateToken', protectRoute, async (req, res) => {
+    const userId = req.params.userId;
+    const { fcmToken } = req.body;
+
+    if (!fcmToken) {
+        return res.status(400).json({ message: 'FCM token is required' });
+    }
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        user.fcmTokens = fcmToken;
+        await user.save();
+
+        res.status(200).json({ message: 'FCM token updated successfully', success: true });
+    } catch (error) {
+        console.error(error, "Error updating FCM token");
+        res.status(500).json({ message: 'Internal server error', success: false });
+    }
+})
 router.post('/:userId/follow', protectRoute, async (req, res) => {
     const targetUserObjectId = req.params.userId;
     const currentUserObjectId = req.user._id
@@ -139,6 +161,7 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
         }
         // send a push notification to the targeted user
         if(targetUser.fcmTokens) {
+            console.log('Fcm Token:', targetUser.fcmTokens);
             await admin.messaging().send({
                 token: targetUser.fcmTokens,
                 notification :{
@@ -147,13 +170,14 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
                 },
                 android: {
                     notification: {
-                        channelId: 'fdefault',
+                        channelId: 'default',
                         sound: 'default'
                     }
                 }
             })
+            console.log('Push notification sent successfully');
         }
-        console.log('Push notification sent to the user', targetUser.fcmTokens);
+        
         //update the targeted user on a newfollower
         const updatedUser = await User.findByIdAndUpdate(targetUserObjectId)
         req.app.get('io').emit('new follower', {
