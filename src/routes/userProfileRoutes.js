@@ -178,7 +178,8 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
                     body: JSON.stringify({
                         to: targetUser.expoPushToken,
                         title:  'New Follower',
-                        body: `🎉 ${currentUser.username} has followed you`
+                        body: `🎉 ${currentUser.username} has followed you`,
+                        badge: unreadCount
                     })
                 })
                 console.log('Push notification sent successfully');
