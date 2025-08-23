@@ -166,25 +166,25 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
                 $inc: { followersCount: 1 }
             }) 
             message = 'You followed this user'
-        }
-        // send a push notification to the targeted user\
-        if(targetUser.expoPushToken) {
-            try {
-                await fetch('https://exp.host/--/api/v2/push/send', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        to: targetUser.expoPushToken,
-                        title:  'New Follower',
-                        body: `🎉 ${currentUser.username} has followed you`,
-                        badge: 1
+            // send a push notification to the targeted user\
+            if(targetUser.expoPushToken) {
+                try {
+                    await fetch('https://exp.host/--/api/v2/push/send', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            to: targetUser.expoPushToken,
+                            title:  'New Follower',
+                            body: `🎉 ${currentUser.username} has followed you`,
+                            badge: 1
+                        })
                     })
-                })
-                console.log('Push notification sent successfully');
-            } catch (error) {
-                console.error('Error sending push notification:', error);
+                    console.log('Push notification sent successfully');
+                } catch (error) {
+                    console.error('Error sending push notification:', error);
+                }
             }
         }
         const updatedUser = await User.findByIdAndUpdate(targetUserObjectId)
