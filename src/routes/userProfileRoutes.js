@@ -105,19 +105,21 @@ router.post('/:userId/expoPushToken', protectRoute, async (req, res) => {
 
   try {
     const user = await User.findById(userId);
+    console.log('Found user:', user);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     user.expoPushToken = expoPushToken;
     try {
-        await user.save();
+        await user.expoPushToken.save();
+        console.log('Updated user:', user);
         console.log('Saved token:', user.expoPushToken);
     } catch (err) {
         console.error('Save failed:', err);
     }
 
-    res.status(200).json({ message: 'expoPushToken saved successfully', success: true });
+    res.status(200).json({ message: 'expoPushToken saved successfully',  token: user.expoPushToken, success: true });
   } catch (error) {
     console.error('Error saving expoPushToken:', error);
     res.status(500).json({ message: 'Internal server error', success: false });
