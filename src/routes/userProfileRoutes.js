@@ -167,7 +167,8 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
             }) 
             message = 'You followed this user'
         }
-        // send a push notification to the targeted user
+        // send a push notification to the targeted user\
+        const unreadCount = await Notification.countDocuments({user: targetUser._id, read: false})
         if(targetUser.expoPushToken) {
             try {
                 await fetch('https://exp.host/--/api/v2/push/send', {
