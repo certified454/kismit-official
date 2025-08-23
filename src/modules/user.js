@@ -66,9 +66,8 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     }],
-    fcmTokens: {
-        type: String,
-        default: ''
+    expoPushToken: {
+        type: String
     },
     followersCount: {
         type: Number,
