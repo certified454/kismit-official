@@ -110,7 +110,12 @@ router.post('/:userId/expoPushToken', protectRoute, async (req, res) => {
     }
 
     user.expoPushToken = expoPushToken;
-    await user.save();
+    try {
+        await user.save();
+        console.log('Saved token:', user.expoPushToken);
+    } catch (err) {
+        console.error('Save failed:', err);
+    }
 
     res.status(200).json({ message: 'expoPushToken saved successfully', success: true });
   } catch (error) {
