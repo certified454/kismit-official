@@ -109,16 +109,15 @@ router.post('/:userId/expoPushToken', protectRoute, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
+    //get the expoPushToken before saving to the database
     user.expoPushToken = expoPushToken;
-    try {
-        await user.expoPushToken.save();
-        console.log('Updated user:', user);
-        console.log('Saved token:', user.expoPushToken);
-    } catch (err) {
-        console.error('Save failed:', err);
+    //check if the expoPushToken is not am empty string
+    if(expoPushToken === "") {
+        console.log('Expo push token is empty')
+        return res.status(400).json({ message: 'expoPushToken cannot be an empty string' })
+    } else {
+        await user.save();
     }
-
     res.status(200).json({ message: 'expoPushToken saved successfully',  token: user.expoPushToken, success: true });
   } catch (error) {
     console.error('Error saving expoPushToken:', error);
