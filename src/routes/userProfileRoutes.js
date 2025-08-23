@@ -99,6 +99,7 @@ router.post('/:userId/expoPushToken', protectRoute, async (req, res) => {
   const { expoPushToken } = req.body;
 
   if (!expoPushToken) {
+    console.log('expoPushToken is required');
     return res.status(400).json({ message: 'expoPushToken is required' });
   }
 

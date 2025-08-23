@@ -67,7 +67,8 @@ const userSchema = new mongoose.Schema({
         ref: "User"
     }],
     expoPushToken: {
-        type: String
+        type: String,
+        default: ""
     },
     followersCount: {
         type: Number,
