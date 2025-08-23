@@ -105,7 +105,7 @@ router.post('/:userId/expoPushToken', protectRoute, async (req, res) => {
 
   try {
     const user = await User.findById(userId);
-    console.log('Found user:', user);
+    // console.log('Found user:', user);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -118,7 +118,7 @@ router.post('/:userId/expoPushToken', protectRoute, async (req, res) => {
     } else {
         await user.save();
     }
-    res.status(200).json({ message: 'expoPushToken saved successfully',  token: user.expoPushToken, success: true });
+    res.status(200).json({ message: 'expoPushToken saved successfully', success: true });
   } catch (error) {
     console.error('Error saving expoPushToken:', error);
     res.status(500).json({ message: 'Internal server error', success: false });
@@ -177,8 +177,8 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
                     },
                     body: JSON.stringify({
                         to: targetUser.expoPushToken,
-                        title: followed ? 'Unfollowed' : 'Followed',
-                        body: `${currentUser.username} has ${followed ? 'unfollowed' : 'followed'} you`
+                        title:  'New Follower',
+                        body: `🎉 ${currentUser.username} has followed you`
                     })
                 })
                 console.log('Push notification sent successfully');
@@ -186,8 +186,6 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
                 console.error('Error sending push notification:', error);
             }
         }
-        
-        //update the targeted user on a newfollower
         const updatedUser = await User.findByIdAndUpdate(targetUserObjectId)
         req.app.get('io').emit('new follower', {
             userId: targetUserObjectId,
