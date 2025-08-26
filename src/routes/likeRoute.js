@@ -63,6 +63,7 @@ router.post('/analysis/:analysisId/like', protectRoute, async (req, res) => {
     const analysis = await Analysis.findById(analysisId);
 
     if (!analysis) {
+      console.log("Analysis not found")
       return res.status(400).json({ message: "Post not found" });
     };
 
@@ -92,6 +93,7 @@ router.post('/analysis/:analysisId/like', protectRoute, async (req, res) => {
       userId: userId,
       liked: !liked
     });
+    console.log("Like event emitted");
     res.status(200).json({
       message,
       analysis: updatedAnalysis,

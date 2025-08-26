@@ -107,17 +107,18 @@ router.get('/', protectRoute, async (req, res) => {
 })
 
 router.get('/:analysisId', protectRoute, async (req, res) => {
-    const analysisId = req.param.analysisId;
+    const analysisId = req.params.analysisId;
     try {
         const analysis = await Analysis.findById(analysisId)
         .populate('user', 'username profilePicture')
 
         const liked= analysis.like.some((id) => id.toString() === req.user._id.toString());
+        console.log("Analysis get successfully")
         res.send({
             analysis, liked, success: true
         })
     } catch (error) {
-        console.log('Failed to get')
+        console.log('Failed to get analysis:', error)
         res.status(500).json({error: 'Internal server error'})
     }
 })
