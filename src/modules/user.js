@@ -28,11 +28,10 @@ const userSchema = new mongoose.Schema({
     },
     isOwner: {
         type: Boolean,
-        default: email === process.env.OWNER_EMAIL,
+        default: false,
     },
     verificationCode: {
-        type: String,
-        default: ""
+        type: String
     },
     verificationCodeExpires: {
         type: Date,
