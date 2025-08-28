@@ -8,8 +8,8 @@ import cloudinary from "../lib/cloudinary.js";
 
 const router = express.Router();
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "15d" });
+const generateToken = (userId, isOwner) => {
+  return jwt.sign({ userId, isOwner }, process.env.JWT_SECRET, { expiresIn: "15d" });
 };
 
 router.post("/register", async (req, res) => {
@@ -81,6 +81,7 @@ router.post("/register", async (req, res) => {
       verificationCode,
       verificationCodeExpires,
       isVerified: false,
+      isOwner: email === process.env.OWNER_EMAIL,
     });
 
     await user.save();
@@ -121,7 +122,7 @@ router.post("/register", async (req, res) => {
                             max-width: 600px;
                             margin: 0 auto;
                             padding: 30px;
-                            background-color: #f5f5f5;
+                            background-color: #f5f5f580;
                             border-radius: 5px;
                         }
                         .footer {
@@ -167,16 +168,16 @@ router.post("/register", async (req, res) => {
                         <h1>Verify Your Email</h1>
                         <img src="https://github.com/certified454/My-portfolio/blob/326ea0bcae6116cb6b6058825fe4df08f3bec7c1/adaptive-icon.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
                         <p>Hi ${username},</p>
-                        <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this four digit code bellow:</p>
+                        <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this code below:</p>
                         <h2>${verificationCode}</h2>
-                        <p>This link will expire in 15 minutes.</p>
+                        <p>This code will expire in 15 minutes.</p>
                         <p class="note" >If you did not create an account, no further action is required. Feel free to ignore this email.</p>
                         <p class="thank-you">Thank you!</p>
-                        <p>The Kismet Team KSM</p>
+                        <p>The Kismet Team KSM ${process.env.OWNER_EMAIL}</p>
                     </div>
                    <div class="footer">
                         <p class="note" >If you have any questions, feel free to reach out to our support team.</p>
-                        <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can unsubscribe at any time.</p>
+                        <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can <a href="${unsubscribe}">unsubscribe</a> at any time.</p>
                         <p style="text-align: center; font-size: 12px; color: #777777;">&copy; ${new Date().getFullYear()} Kismet. All rights reserved.</p>
                     </div>
                 </body>
@@ -191,7 +192,7 @@ router.post("/register", async (req, res) => {
           .status(500)
           .json({ message: "Error sending verification email" });
       }
-      const token = generateToken(user._id);
+      const token = generateToken(user._id, user.isOwner);
       res.status(201).json({
         token,
         user: {
@@ -200,6 +201,7 @@ router.post("/register", async (req, res) => {
           email: user.email,
           profilePicture: user.profilePicture,
           isVerified: user.isVerified,
+          isOwner: user.isOwner,
         },
       });
     });

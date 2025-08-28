@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    isOwner: {
+        type: Boolean,
+        default: email === process.env.OWNER_EMAIL,
+    },
     verificationCode: {
         type: String,
         default: ""
