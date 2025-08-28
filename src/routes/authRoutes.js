@@ -177,7 +177,7 @@ router.post("/register", async (req, res) => {
                     </div>
                    <div class="footer">
                         <p class="note" >If you have any questions, feel free to reach out to our support team.</p>
-                        <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can <a href="${unsubscribe}">unsubscribe</a> at any time.</p>
+                        <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can <a href="unsubscribe">unsubscribe</a> at any time.</p>
                         <p style="text-align: center; font-size: 12px; color: #777777;">&copy; ${new Date().getFullYear()} Kismet. All rights reserved.</p>
                     </div>
                 </body>
