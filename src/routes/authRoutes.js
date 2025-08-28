@@ -202,7 +202,7 @@ router.post("/register", async (req, res) => {
       isVerified: false,
       isOwner: email === process.env.OWNER_EMAIL,
     });
-    //check if everything is okay before a user is can now be save to the database
+    //check if everything is okay before a user can now be save to the database
     if (!user) {
       console.log("User is not valid");
       return res.status(400).json({ message: "User is not valid" });

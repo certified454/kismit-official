@@ -11,6 +11,7 @@ import anaylsisRoutes from './routes/analysis.js';
 import commentRoutes from './routes/commentRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import likeRoute from './routes/likeRoute.js';
+import challengeRoutes from './routes/challengeRoutes.js';
 import { connectDB } from "./lib/db.js"
 
 const app = express();
@@ -35,6 +36,7 @@ app.use("/api/analysis", anaylsisRoutes);
 app.use("/api", commentRoutes);
 app.use("/api", searchRoutes);
 app.use("/api", likeRoute);
+app.use("/api/challange", challengeRoutes);
 
 io.on('connection', (socket) => {
     console.log('New client connected', socket.id);
@@ -50,7 +52,7 @@ io.on('connection', (socket) => {
     // add newComment event listener
     socket.on('new comment created', (newComment) => {
         console.log('new comment created:', newComment);
-        io.emit('new comment created', { postId })
+        io.emit('new comment created', { postId, newComment })
     });
     // add newLike event listener
     socket.on('new like created', (postId, userId, liked) => {
@@ -72,6 +74,10 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('Client disconnected', socket.id);
     })
+    socket.on('new challenge created', (populatedChallenge) => {
+        console.log('new challenge created:', populatedChallenge);
+        io.emit('new challenge created', populatedChallenge);
+    });
 });
 
 server.listen(PORT, () => {
