@@ -1,4 +1,4 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
 const poolOptionSchema = new mongoose.Schema({
     optionText: {
@@ -7,7 +7,7 @@ const poolOptionSchema = new mongoose.Schema({
         trim: true
     },
     vote: [{
-        type: mongo.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }]
 });
@@ -24,7 +24,7 @@ const challengeSchema = new mongoose.Schema({
         trim: true
     },
     createdBy: {
-        type: mongo.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
