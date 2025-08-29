@@ -23,10 +23,13 @@ const challengeSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    time: {
+        type: Date,
+        required: true
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        ref: 'User'
     },
     pools: [
         poolOptionSchema

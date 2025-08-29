@@ -6,13 +6,13 @@ import Challenge from "../modules/challenge.js";
 
 const router = express.Router();
 
-router.post('/register', protectRoute, ownerOnly, async (req, res) => {
+router.post('/register', protectRoute, async (req, res) => {
     const userId = req.user._id;
-    const { title, description, pools, startDate, endDate} = req.body;
+    const { title, description, time, pools, startDate, endDate, } = req.body;
 
     try {
         if (!title || !description || !pools || !startDate || !endDate) {
-            console.log(title, description, pools, startDate, endDate);
+            console.log('all fields are required');
             return res.status(400).json({ message: "All fields are required" });
         }
         if (new Date(startDate) >= new Date(endDate)) {
@@ -26,12 +26,13 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
         const newChallenge = new Challenge({
             title,
             description,
+            time,
             pools,
             startDate,
             endDate,
             createdBy: userId
         });
-        console.log(newChallenge);
+        console.log(newChallenge, "newChallenge");
         await newChallenge.save();
 
         const populatedChallenge = await Challenge.findById(newChallenge._id).populate('user', 'username profilePicture');
@@ -44,9 +45,11 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
                     },
                     title: populatedChallenge.title,
                     description: populatedChallenge.description,
+                    time: populatedChallenge.time,
                     pools: populatedChallenge.pools,
                     startDate: populatedChallenge.startDate,
                     endDate: populatedChallenge.endDate,
+                    createdBy: populatedChallenge.createdBy
                 })
         return res.status(201).json({ message: "Challenge created successfully", challenge: newChallenge });
     } catch (error) {
