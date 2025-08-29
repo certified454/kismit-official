@@ -36,7 +36,7 @@ app.use("/api/analysis", anaylsisRoutes);
 app.use("/api", commentRoutes);
 app.use("/api", searchRoutes);
 app.use("/api", likeRoute);
-app.use("/api/challange", challengeRoutes);
+app.use("/api/challenge", challengeRoutes);
 
 io.on('connection', (socket) => {
     console.log('New client connected', socket.id);
@@ -69,15 +69,15 @@ io.on('connection', (socket) => {
         console.log('userProfileUpdated:', userId, updatedFields );
         io.emit('userProfileUpdated', { userId, updatedFields });
     });
+    socket.on('new challenge created', (populatedChallenge) => {
+        console.log('new challenge created:', populatedChallenge);
+        io.emit('new challenge created', populatedChallenge);
+    });
 
     // disconnect event
     socket.on('disconnect', () => {
         console.log('Client disconnected', socket.id);
     })
-    socket.on('new challenge created', (populatedChallenge) => {
-        console.log('new challenge created:', populatedChallenge);
-        io.emit('new challenge created', populatedChallenge);
-    });
 });
 
 server.listen(PORT, () => {

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import express from "express";
-import protectRoute from "../middleware/auth.middleware";
-import ownerOnly from "../middleware/owner.middleware";
+import protectRoute from '../middleware/auth.middleware.js';
+import ownerOnly from "../middleware/owner.middleware.js";
 import Challenge from "../modules/challenge.js";
 
 const router = express.Router();
