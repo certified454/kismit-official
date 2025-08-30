@@ -50,10 +50,10 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
                     endDate: populatedChallenge.endDate,
                     createdBy: populatedChallenge.createdBy
                 })
-        return res.status(201).json({ message: "Challenge created successfully", challenge: newChallenge });
+        res.status(201).json({ message: "Challenge created successfully", populatedChallenge, newChallenge });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: "Internal server error" });
     }
 });
 
@@ -62,9 +62,13 @@ router.get("/:challengeId", protectRoute, async (req, res) => {
     try {
         const challenge = await Challenge.findById(challengeId)
         .populate('user', 'username profilePicture')
-
-        res.send(challenge);
-        console.log("Challenge retrieved successfully", challenge);
+        if (!challenge) { 
+            console.log("Challenge not found");
+            return res.status(404).json({ message: "Challenge not found" });
+        } else {
+            res.send(challenge);
+            console.log("Challenge retrieved successfully", challenge);
+        }
     } catch (error) {
         console.error(error, "error getting challenge");
         res.status(500).json({ message: "error getting challenge" });
