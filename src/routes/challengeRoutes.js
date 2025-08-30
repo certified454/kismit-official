@@ -57,21 +57,16 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
     }
 });
 
-router.get('/all', protectRoute, async (req, res) => {
+router.get("/:challengeId", protectRoute, async (req, res) => {
+    const challengeId = req.params.challengeId
     try {
-        const challenges = await Challenge.find().populate('user', 'username profilePicture');
-        
-        if(!challenges) {
-            console.log("No challenges found");
-            return res.status(404).json({ message: "No challenges found" });
-        }
-        res.send({ challenges, success: true})
-        console.log(challenges, "fetched challenges");
+        const challenge = await Challenge.findById(challengeId)
+        .populate('user', 'username profilePicture')
+
+        res.send({challenge});
     } catch (error) {
-        return {
-            success: false,
-            message: error.message
-        }
+        console.error(error, "error getting challenge");
+        res.status(500).json({ message: "error getting challenge" });
     }
 })
 
