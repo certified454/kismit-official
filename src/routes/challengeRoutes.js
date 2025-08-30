@@ -7,7 +7,6 @@ import Challenge from "../modules/challenge.js";
 const router = express.Router();
 
 router.post('/register', protectRoute, ownerOnly, async (req, res) => {
-    const userId = req.user._id;
     const { title, description, time, pools, startDate, endDate, } = req.body;
 
     try {
@@ -30,7 +29,7 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
             pools, 
             startDate,
             endDate,
-            createdBy: userId
+            user: req.user._id
         });
         console.log(newChallenge, "newChallenge");
         await newChallenge.save();
