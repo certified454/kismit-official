@@ -57,16 +57,16 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
     }
 });
 
-router.get('/', protectRoute, async (req, res) => {
+router.get('/all', protectRoute, async (req, res) => {
     try {
-        const challenge = await Challenge.find().populate('user', 'username profilePicture');
+        const challenges = await Challenge.find().populate('user', 'username profilePicture');
         
-        if(!challenge) {
+        if(!challenges) {
             console.log("No challenges found");
             return res.status(404).json({ message: "No challenges found" });
         }
-
-        res.send({ challenge, success: true})
+        res.send({ challenges, success: true})
+        console.log(challenges, "fetched challenges");
     } catch (error) {
         return {
             success: false,
