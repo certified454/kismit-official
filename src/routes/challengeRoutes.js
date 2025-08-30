@@ -64,6 +64,7 @@ router.get("/:challengeId", protectRoute, async (req, res) => {
         .populate('user', 'username profilePicture')
 
         res.send({challenge});
+        console.log("Challenge retrieved successfully");
     } catch (error) {
         console.error(error, "error getting challenge");
         res.status(500).json({ message: "error getting challenge" });
