@@ -1,16 +1,5 @@
 import mongoose from "mongoose";
-
-const poolOptionSchema = new mongoose.Schema({
-    optionText: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    vote: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }]
-});
+import { type } from "os";
 
 const challengeSchema = new mongoose.Schema({
     title: {
@@ -31,9 +20,11 @@ const challengeSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
-    pools: [
-        poolOptionSchema
-    ],
+    pools: [{
+        type: String,
+        required: true,
+        trim: true
+    }],
     startDate: {
         type: Date,
         required: true
@@ -42,7 +33,7 @@ const challengeSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    votePerUser:[ {
+    votePerUser: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
