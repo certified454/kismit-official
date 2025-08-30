@@ -270,6 +270,7 @@ router.post("/verify-code", async (req, res) => {
         _id: user._id,
         username: user.username,
         email: user.email,
+        isOwner: user.email === process.env.OWNER_EMAIL,
       }
      });
     console.log("Account verification is successful");
@@ -462,6 +463,7 @@ router.post("/login", async (req, res) => {
         username: user.username,
         email: user.email,
         profilePicture: user.profilePicture,
+        isOwner: email === process.env.OWNER_EMAIL,
       },
     });
   } catch (error) {
