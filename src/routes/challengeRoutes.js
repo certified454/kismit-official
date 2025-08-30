@@ -55,6 +55,24 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
+});
+
+router.get('/', protectRoute, async (req, res) => {
+    try {
+        const challenge = await Challenge.find().populate('user', 'username profilePicture');
+        
+        if(!challenge) {
+            console.log("No challenges found");
+            return res.status(404).json({ message: "No challenges found" });
+        }
+
+        res.send({ challenge, success: true})
+    } catch (error) {
+        return {
+            success: false,
+            message: error.message
+        }
+    }
 })
 
 export default router;
