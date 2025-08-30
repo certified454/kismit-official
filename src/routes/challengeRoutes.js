@@ -66,8 +66,8 @@ router.get("/:challengeId", protectRoute, async (req, res) => {
             console.log("Challenge not found");
             return res.status(404).json({ message: "Challenge not found" });
         } else {
-            res.send(challenge);
             console.log("Challenge retrieved successfully", challenge);
+            res.send(challenge);
         }
     } catch (error) {
         console.error(error, "error getting challenge");
