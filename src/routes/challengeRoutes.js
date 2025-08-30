@@ -27,9 +27,9 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
             title,
             description,
             time,
-            pools: pools.map(option => ({ optionText: option })), 
-            startDate: new Date(startDate).toISOString(),
-            endDate: new Date(endDate).toISOString(),
+            pools, 
+            startDate,
+            endDate,
             createdBy: userId
         });
         console.log(newChallenge, "newChallenge");
