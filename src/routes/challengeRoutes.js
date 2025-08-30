@@ -57,10 +57,9 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
     }
 });
 
-router.get("/:challengeId", protectRoute, async (req, res) => {
-    const challengeId = req.params.challengeId
+router.get("/all", protectRoute, async (req, res) => {
     try {
-        const challenge = await Challenge.findById(challengeId)
+        const challenge = await Challenge.findOne()
         .populate('user', 'username profilePicture')
         if (!challenge) { 
             console.log("Challenge not found");
