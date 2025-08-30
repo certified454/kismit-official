@@ -6,7 +6,7 @@ import Challenge from "../modules/challenge.js";
 
 const router = express.Router();
 
-router.post('/register', protectRoute, async (req, res) => {
+router.post('/register', protectRoute, ownerOnly, async (req, res) => {
     const userId = req.user._id;
     const { title, description, time, pools, startDate, endDate, } = req.body;
 
