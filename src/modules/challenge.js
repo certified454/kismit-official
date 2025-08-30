@@ -27,10 +27,6 @@ const challengeSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    createdBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    },
     pools: [
         poolOptionSchema
     ],
@@ -42,10 +38,6 @@ const challengeSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    votePerUser:[ {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }],
     isChallengeActive: {
         type: Boolean,
         default:  true
