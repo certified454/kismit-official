@@ -63,8 +63,8 @@ router.get("/:challengeId", protectRoute, async (req, res) => {
         const challenge = await Challenge.findById(challengeId)
         .populate('user', 'username profilePicture')
 
-        res.send({challenge});
-        console.log("Challenge retrieved successfully");
+        res.send(challenge);
+        console.log("Challenge retrieved successfully", challenge);
     } catch (error) {
         console.error(error, "error getting challenge");
         res.status(500).json({ message: "error getting challenge" });
