@@ -12,6 +12,7 @@ import commentRoutes from './routes/commentRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import likeRoute from './routes/likeRoute.js';
 import challengeRoutes from './routes/challengeRoutes.js';
+import sportsRoutes from './routes/sportsRoutes.js';
 import { connectDB } from "./lib/db.js"
 
 const app = express();
@@ -37,6 +38,7 @@ app.use("/api", commentRoutes);
 app.use("/api", searchRoutes);
 app.use("/api", likeRoute);
 app.use("/api/challenge", challengeRoutes);
+app.use("/api/sports", sportsRoutes);
 
 io.on('connection', (socket) => {
     console.log('New client connected', socket.id);

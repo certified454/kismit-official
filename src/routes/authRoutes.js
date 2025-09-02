@@ -422,6 +422,9 @@ router.post("/resend-code", async (req, res) => {
   }
 });
 
+router.post('/forgoten-password', async (req, res) => {
+  
+})
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
