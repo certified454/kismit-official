@@ -16,8 +16,10 @@ router.get('/fixtures', protectRoute, async (req, res) => {
             console.log('Error fetching upcoming fixtures:', response.statusText);
             return res.status(response.status).json({ message: 'Error fetching upcoming fixtures' });
         };
+        const raw = await response.text();
+        console.log('Raw response:', raw);
         const data = await response.json();
-        console.log('Fetched upcoming fixtures successfully');
+        console.log('Fetched upcoming fixtures successfully', data);
         res.status(200).json(data);
     } catch (error) {
         console.error('Error fetching sports data:', error);
