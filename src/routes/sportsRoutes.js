@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/fixtures', protectRoute, async (req, res) => {
     const SPORTMONK_API_TOKEN = process.env.SPORTMONKS_APIS;
     const baseUrl = 'https://api.sportmonks.com/v3/football/livescores';
-    const queryParams = `?api_token=${SPORTMONK_API_TOKEN}&include=league,home_team,away_team,localTeam,visitorTeam,venue,referee,events,stats,standings,substitutions,lineup,bench,scores`;
+    const queryParams = `?api_token=${SPORTMONK_API_TOKEN}&include=league,participants,venue,referee`;
 
     try {
         const response = await fetch(`${baseUrl}${queryParams}`);
