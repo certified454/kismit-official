@@ -45,6 +45,14 @@ const challengeSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
+    },
+    vote: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    voteCount: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 
