@@ -3,6 +3,7 @@ import express from "express";
 import protectRoute from '../middleware/auth.middleware.js';
 import ownerOnly from "../middleware/owner.middleware.js";
 import Challenge from "../modules/challenge.js";
+import Vote from "../modules/vote.js";
 
 const router = express.Router();
 
