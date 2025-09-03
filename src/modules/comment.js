@@ -7,6 +7,10 @@ const commentSchema = new mongoose.Schema({
     audio:{
         type: String,
     },
+    watchedAd: {
+        type: Boolean,
+        default: false
+    },
     post: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Post",

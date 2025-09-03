@@ -12,76 +12,74 @@ const router = express.Router();
 router.post("/post/:postId", protectRoute, async (req, res) => {
     try {
         const postId = req.params.postId;
-        const { text, audio } = req.body;
+        const { text, audio, watchedAd } = req.body;
 
-
-        const post = await Post.findById(postId) 
+        const post = await Post.findById(postId);
         if (!post) {
-            console.log("Post not found with the ids")
-            return res.status(404).json({message: "Post not found with the id"})
-        } else if ( !text && !audio) {
-            console.log("Missing required fields")
-            return res.status(400).json({ message: "Missing required fields"})
-        } else if ( text && audio ){
-            console.log("You can only comment with text or audio at a time")
-            return res.status(400).json({message: " You can only comment with text or audio at a time"})
+            return res.status(404).json({ message: "Post not found with the id" });
+        }
+        if (!text && !audio) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
+        if (text && audio) {
+            return res.status(400).json({ message: "You can only comment with text or audio at a time" });
         }
 
-        // Save audio to cloudinary if provided
         let audioUrl = null;
         if (audio) {
-            const today = new Date();
-            today.setHours(0,0,0,0)
-            const audioCountAudio = await Comment.countDocuments(
-                {
+            // Require ad watch for audio comments
+            if (!watchedAd) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const audioCountAudio = await Comment.countDocuments({
                     user: req.user._id,
-                    audio: {$ne: null},
-                    createdAt: {$gte: today}
-                }
-            )
-            if (audioCountAudio >= 3 ){
-                console.log("You've reached your daily audio comment limit. Please subscribe to continue using audio comments")
-                return res.status(400).json({message: "You've reached your daily audio comment limit. Please subscribe to continue using audio comments"})
-            } else {
-                    const uploadedAudioToCloudinary = await cloudinary.uploader.upload(audio, {
-                        resource_type: 'auto',
+                    audio: { $ne: null },
+                    createdAt: { $gte: today }
+                });
+                if (audioCountAudio >= 3) {
+                    return res.status(400).json({
+                        message: "You've reached your daily audio comment limit. Please watch an ad or subscribe to continue using audio comments"
                     });
-                    audioUrl = uploadedAudioToCloudinary.secure_url;
+                } else {
+                    return res.status(403).json({
+                        message: "You must watch a rewarded ad to comment with audio."
+                    });
                 }
-
             }
+            const uploadedAudioToCloudinary = await cloudinary.uploader.upload(audio, {
+                resource_type: 'auto',
+            });
+            audioUrl = uploadedAudioToCloudinary.secure_url;
+        }
 
         const newComment = new Comment({
-            text: text.trim(),
+            text: text ? text.trim() : undefined,
             audio: audioUrl,
             post: postId,
             user: req.user._id,
-        })
-
-        await Post.findByIdAndUpdate(postId, {$inc: { commentsCount: 1}})
-
-        await newComment.save();
-
-        // Emit new comment event
-        const populatedComment = await Comment.findById(newComment._id).populate('user', 'username profilePicture');
-        req.app.get('io').emit('new comment created', {
-        _id: populatedComment._id,
-        postId: populatedComment.post,
-        user: {
-            id: populatedComment.user._id,
-            username: populatedComment.user.username,
-            profilePicture: populatedComment.user.profilePicture
-        },
-        text: populatedComment.text,
-        audio: populatedComment.audio,
-        createdAt: populatedComment.createdAt
         });
 
-        console.log("comment saved and emitted");
+        await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
+
+        await newComment.save();
+        const populatedComment = await Comment.findById(newComment._id).populate('user', 'username profilePicture');
+        req.app.get('io').emit('new comment created', {
+            _id: populatedComment._id,
+            postId: populatedComment.post,
+            user: {
+                id: populatedComment.user._id,
+                username: populatedComment.user.username,
+                profilePicture: populatedComment.user.profilePicture
+            },
+            text: populatedComment.text,
+            audio: populatedComment.audio,
+            createdAt: populatedComment.createdAt
+        });
+
         res.status(201).json(populatedComment);
     } catch (error) {
         console.error(error, "error creating comment");
-        return res.status(500).json({ message: 'Internal server error', error: error.message});
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 });
 
