@@ -13,6 +13,7 @@ import searchRoutes from './routes/searchRoutes.js';
 import likeRoute from './routes/likeRoute.js';
 import challengeRoutes from './routes/challengeRoutes.js';
 import sportsRoutes from './routes/sportsRoutes.js';
+import voteRoutes from './routes/voteRoutes.js';
 import { connectDB } from "./lib/db.js"
 
 const app = express();
@@ -39,10 +40,11 @@ app.use("/api", searchRoutes);
 app.use("/api", likeRoute);
 app.use("/api/challenge", challengeRoutes);
 app.use("/api/sports", sportsRoutes);
+app.use("/api/vote", voteRoutes);
 
 io.on('connection', (socket) => {
     console.log('New client connected', socket.id);
-    // add newPost event listener
+  
     socket.on('new post created', (newPost) => {
         console.log('new post created:', newPost);
         io.emit('new post created', newPost);
@@ -51,22 +53,18 @@ io.on('connection', (socket) => {
         console.log('new analysis created:', newAnalysis);
         io.emit('new analysis created', newAnalysis);
     });
-    // add newComment event listener
     socket.on('new comment created', (newComment) => {
         console.log('new comment created:', newComment);
         io.emit('new comment created', { postId, newComment })
     });
-    // add newLike event listener
     socket.on('new like created', (postId, userId, liked) => {
         console.log('new like created:', postId, userId, liked);
         io.emit('new like created', { postId, userId, liked });
     });
-    // add newFollow event listener
     socket.on('new follower', (userId, followerId, followed) => {
         console.log('new follower:', userId, followerId, followed);
         io.emit('new follower', { userId, followerId, followed });
     });
-    // add getting user by Id event listener
     socket.on('userProfileUpdated', ( userId, updatedFields ) => {
         console.log('userProfileUpdated:', userId, updatedFields );
         io.emit('userProfileUpdated', { userId, updatedFields });
@@ -74,6 +72,10 @@ io.on('connection', (socket) => {
     socket.on('new challenge created', (populatedChallenge) => {
         console.log('new challenge created:', populatedChallenge);
         io.emit('new challenge created', populatedChallenge);
+    });
+    socket.on('new vote created', (populatedVote) => {
+        console.log('new vote created:', populatedVote);
+        io.emit('new vote created', populatedVote);
     });
 
     // disconnect event

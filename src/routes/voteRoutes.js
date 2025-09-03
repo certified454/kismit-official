@@ -29,8 +29,18 @@ router.post('/challenge/all/vote', protectRoute, async (req, res) => {;
                     text
                 });
                 await newVote.save();
-                console.log("Vote recorded successfully");
-                res.status(201).json({ message: "Vote recorded successfully" });
+                console.log("Vote created successfully");
+                const populatedVote = await Vote.findById(newVote._id).populate('user', 'username profilePicture');
+                    req.app.get('io').emit('new vote created', {
+                        _id: populatedVote._id,
+                        user: {
+                            id: populatedVote.user._id,
+                            username: populatedVote.user.username,
+                            profilePicture: populatedVote.user.profilePicture
+                        },
+                        text: populatedVote.text
+                    });
+                res.status(201).json({ message: "Vote submited successfully", newVote, populatedVote });
             }
         }
     } catch (error) {
