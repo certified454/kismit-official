@@ -6,11 +6,10 @@ const router = express.Router();
 //define a route fetch sports data using sportmonk api
 router.get('/fixtures', protectRoute, async (req, res) => {
     const SPORTMONK_API_TOKEN = process.env.SPORTMONKS_APIS;
-    const baseUrl = 'https://api.sportmonks.com/v3/football/livescores';
-    const queryParams = `?api_token=${SPORTMONK_API_TOKEN}&include=league,participants,venue,referee`;
+    const baseUrl = `https://api.sportmonks.com/v3/football/livescores/latest?api_token=${SPORTMONK_API_TOKEN}`;
 
     try {
-        const response = await fetch(`${baseUrl}${queryParams}`);
+        const response = await fetch(`${baseUrl}`);
         if (!response.ok) {
             const errorText = await response.text();
             console.log('Error fetching upcoming fixtures:', errorText);
