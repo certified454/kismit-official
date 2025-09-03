@@ -58,19 +58,87 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
 });
 
 router.get("/all", protectRoute, async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const challenges = await Challenge.aggregate([
+        {
+            $sort: { createdAt: -1 }
+        },
+        {
+            $skip: skip 
+        },
+        {
+            $limit: limit
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'user',
+                foreignField: '_id',
+                as: 'user'
+            }
+        },
+        {
+            $unwind: '$user'
+        },
+        {
+            $lookup: {
+                from: 'votes',
+                localField: '_id',
+                foreignField: 'challenge',
+                as: 'votes'
+            }
+        },
+        {
+            $addFields: {
+                voteCount: { $size: '$votes' },
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                title: 1,
+                description: 1,
+                time: 1,
+                pools: 1,
+                startDate: 1,
+                endDate: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                user: {
+                    _id: '$user._id',
+                    username: '$user.username',
+                    profilePicture: '$user.profilePicture'
+                },
+                voteCount: 1
+            }
+        }
+    ])
+    const totalVotes = await Vote.countDocuments();
+    console.log("Total votes:", challenges, totalVotes);
+    res.send({ challenges, totalVotes });
+})
+
+router.get('/:challengeId', protectRoute, async (req, res) => {
+    const challengeId = req.params.challengeId;
+    const user = req.user._id;
+
     try {
-        const challenge = await Challenge.findOne()
-        .populate('user', 'username profilePicture')
-        if (!challenge) { 
+        const challenge = await Challenge.findById(challengeId)
+            .populate('user', 'username profilePicture');
+        if (!challenge) {
             console.log("Challenge not found");
             return res.status(404).json({ message: "Challenge not found" });
-        } else {
-            console.log("Challenge retrieved successfully", challenge);
-            res.send(challenge);
         }
+
+        const totalVotes = await Vote.countDocuments();
+        console.log("Challenge retrieved successfully", challenge, totalVotes);
+        res.send({ challenge, totalVotes });
     } catch (error) {
-        console.error(error, "error getting challenge");
-        res.status(500).json({ message: "error getting challenge" });
+        console.error("Error retrieving challenge:", error);
+        res.status(500).json({ message: "Error retrieving challenge" });
     }
 })
 
