@@ -40,7 +40,7 @@ app.use("/api", searchRoutes);
 app.use("/api", likeRoute);
 app.use("/api/challenge", challengeRoutes);
 app.use("/api/sports", sportsRoutes);
-app.use("/api/vote", voteRoutes);
+app.use("/api", voteRoutes);
 
 io.on('connection', (socket) => {
     console.log('New client connected', socket.id);
