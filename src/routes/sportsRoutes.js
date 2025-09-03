@@ -6,8 +6,8 @@ const router = express.Router();
 //define a route fetch sports data using sportmonk api
 router.get('/fixtures', protectRoute, async (req, res) => {
     const SPORTMONK_API_TOKEN = process.env.SPORTMONKS_APIS;
-    const baseUrl = 'https://api.sportmonks.com/v3/football/leagues/{league_id}';
-    const queryParams = `?api_token=${SPORTMONK_API_TOKEN}&include=currentSeason`;
+    const baseUrl = 'https://api.sportmonks.com/v3/football/leagues';
+    const queryParams = `?api_token=${SPORTMONK_API_TOKEN}`;
 
     try {
         const response = await fetch(`${baseUrl}${queryParams}`);
