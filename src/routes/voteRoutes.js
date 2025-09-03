@@ -17,7 +17,12 @@ router.post('/challenge/all/vote', protectRoute, async (req, res) => {;
             if(!votechallenge) {
                 console.log("No active challenge found");
                 return res.status(404).json({ message: "No active challenge found" });
-            } else {
+            } 
+            if(votechallenge.includes(req.user._id)){
+                console.log("You have already voted on this challenge");
+                return res.status(400).json({ message: "You have already voted on this challenge" });
+            }
+            else {
                 const newVote = new Vote({
                     user: req.user._id,
                     challenge: votechallenge._id,
