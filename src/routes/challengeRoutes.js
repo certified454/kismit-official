@@ -105,6 +105,7 @@ router.get("/all", protectRoute, async (req, res) => {
                 time: 1,
                 pools: 1,
                 startDate: 1,
+                isChallengeActive: 1,
                 endDate: 1,
                 createdAt: 1,
                 updatedAt: 1,
