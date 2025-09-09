@@ -42,9 +42,7 @@ router.post("/register", protectRoute,  async (req, res) => {
             likesCount: populatedPost.likesCount,
             createdAt: populatedPost.createdAt
         })
-        console.log("Post save and emitted successfully");
         res.status(201).json(populatedPost);
-
     } catch (error) {
         console.error(error, "error registering post");
         res.status(500).json({ message: "error registering post" });
@@ -112,11 +110,7 @@ router.get("/", protectRoute, async (req, res) => {
                 }
             }
         ]);
-
-        console.log("Posts fetched successfully");
-
         const totalPosts = await Post.countDocuments();
-        
         res.send({
             posts,
             currentPage: page,
@@ -124,7 +118,6 @@ router.get("/", protectRoute, async (req, res) => {
             totalPages: Math.ceil(totalPosts / limit),
         })
     } catch (error) {
-        console.error(error, "error fetching posts");
         res.status(500).json({ message: "error fetching posts" });
     }
 });

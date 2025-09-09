@@ -32,7 +32,6 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
             endDate,
             user: req.user._id
         });
-        console.log(newChallenge, "newChallenge");
         await newChallenge.save();
 
         const populatedChallenge = await Challenge.findById(newChallenge._id).populate('user', 'username profilePicture');
@@ -119,7 +118,6 @@ router.get("/all", protectRoute, async (req, res) => {
         }
     ])
     const totalVotes = await Vote.countDocuments();
-    console.log("Total votes:", challenges, totalVotes);
     res.send({ challenges, totalVotes });
 })
 
@@ -131,12 +129,9 @@ router.get('/:challengeId', protectRoute, async (req, res) => {
         const challenge = await Challenge.findById(challengeId)
             .populate('user', 'username profilePicture');
         if (!challenge) {
-            console.log("Challenge not found");
             return res.status(404).json({ message: "Challenge not found" });
         }
-
-        const totalVotes = await Vote.countDocuments();
-        console.log("Challenge retrieved successfully", challenge, totalVotes);
+        const totalVotes = await Vote.countDocuments({ challengeId });
         res.send({ challenge, totalVotes });
     } catch (error) {
         console.error("Error retrieving challenge:", error);

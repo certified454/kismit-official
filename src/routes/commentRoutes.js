@@ -143,7 +143,6 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
             totalComments,
             totalPages: Math.ceil(totalComments / limit)
         })
-        
     } catch (error) {
         console.error("Error fetching comments", error)
         return res.status(500).json({ message: 'Internal server error', error: error.message })

@@ -96,7 +96,6 @@ router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
                 }
             }
         ])
-        console.log("Votes retrieved:", votes);
         return res.send({ votes });
     } catch (error) {
         console.error("Error retrieving votes:", error);
