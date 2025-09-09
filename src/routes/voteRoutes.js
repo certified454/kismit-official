@@ -29,7 +29,7 @@ router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
                 user,
                 challenge: challenge._id,
             });
-            await Challenge.findByIdAndUpdate(challenge._id, { $inc: { voteCount: 1 } });
+           
             await newVote.save();
             const populatedVote = await Vote.findById(newVote._id).populate('user', 'username avatarUrl').populate('challenge');
             req.app.get('io').emit('new vote created', {

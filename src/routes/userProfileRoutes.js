@@ -75,7 +75,6 @@ router.get('/:userId/posts', protectRoute, async (req, res) => {
         const userId = req.params.userId;
         const posts = await Post.find({ user: userId}).sort({ createdAt: -1});
         res.status(200).json({ posts, success: true });
-        console.log("User posts fetched successfully");
     } catch (error) {
         console.error(error, "Error fetching user posts");
         res.status(500).json({ message: "Internal server error", success: false });
@@ -86,7 +85,6 @@ router.get('/:userId/analysis', protectRoute, async ( req, res) =>{
         const userId = req.params.userId;
         const analysis = await Analysis.find({ user: userId}).sort({ createdAt: -1});
         res.status(200).json({message: 'User analysis fetched', success: true, analysis});
-        console.log({message: 'user analysis fetched'})
     } catch (error) {
         console.error(error, "Internal server error ")
         res.status(500).json({message: 'Internal sever error'})
