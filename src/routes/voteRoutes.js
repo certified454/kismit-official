@@ -84,7 +84,7 @@ router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
                     user: {
                         _id: '$user._id',
                         username: '$user.username',
-                        avatarUrl: '$user.avatarUrl'
+                        profilePicture: '$user.profilePicture'
                     }
                 }
             }
