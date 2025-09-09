@@ -109,7 +109,7 @@ router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
             votes,
             currentPage: page,
             totalVotes,
-            totalPages: Math.ceil(totalComments / limit)
+            totalPages: Math.ceil(totalVotes / limit)
         });
     } catch (error) {
         console.error("Error retrieving votes:", error);
