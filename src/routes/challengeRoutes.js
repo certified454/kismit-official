@@ -131,7 +131,7 @@ router.get('/:challengeId', protectRoute, async (req, res) => {
         if (!challenge) {
             return res.status(404).json({ message: "Challenge not found" });
         }
-        const totalVotes = await Vote.countDocuments({ challengeId });
+        const totalVotes = await Vote.countDocuments({ challenge: challengeId });
         res.send({ challenge, totalVotes });
     } catch (error) {
         console.error("Error retrieving challenge:", error);
