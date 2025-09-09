@@ -105,7 +105,7 @@ router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
             return res.status(404).json({ message: "No votes found" });
         }
         console.log("Votes retrieved:", votes);
-        res.send(200).json({
+        return res.send(200).json({
             votes,
             currentPage: page,
             totalVotes,
