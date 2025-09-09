@@ -99,7 +99,7 @@ router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
                 }
             }
         ])
-        const totalVote = await vote.countDocuments({challenge: challengeObjectId})
+        const totalVote = await Vote.countDocuments({challenge: challengeObjectId})
         if (!votes) {
             console.log("No votes found");
             return res.status(404).json({ message: "No votes found" });
