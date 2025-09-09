@@ -136,8 +136,6 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
                 }
             }
         ])
-
-        console.log("Comments fetched successfully");
         const totalComments = await Comment.countDocuments({post: postObjectId});
         return res.send({
             comments,

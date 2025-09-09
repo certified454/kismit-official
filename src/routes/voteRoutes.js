@@ -2,6 +2,7 @@ import express, { request } from "express";
 import Challenge from "../modules/challenge.js";
 import Vote from "../modules/vote.js";
 import protectRoute from "../middleware/auth.middleware.js";
+import mongoose from "mongoose";
 const router = express.Router();
 //route to vote on a challenge
 router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
@@ -53,9 +54,18 @@ router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
+    const challengeId = req.params.challengeId
 
+    if(!mongoose.Types.ObjectId.isValid(challengeId)) {
+        console.log('No votes yet');
+        return res.status.json({message: 'Be the first to vote'})
+    }
+    const challengeObjectId = new mongoose.ObjectId(challengeId);
     try {
         const votes = await Vote.aggregate([
+            {
+                $match: { challenge: challengeObjectId }
+            },
             {
                 $sort: { createdAt: -1 }
             },
@@ -89,12 +99,18 @@ router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
                 }
             }
         ])
+        const totalVote = await votes.countDocuments({challenge: challengeObjectId})
         if (!votes) {
             console.log("No votes found");
             return res.status(404).json({ message: "No votes found" });
         }
         console.log("Votes retrieved:", votes);
-        res.status(200).json({ votes });
+        res.send(200).json({
+            votes,
+            currentPage: page,
+            totalVotes,
+            totalPages: Math.ceil(totalComments / limit)
+        });
     } catch (error) {
         console.error("Error retrieving votes:", error);
         res.status(500).json({ message: "Error retrieving votes" });
