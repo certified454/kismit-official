@@ -60,7 +60,7 @@ router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
         console.log('No votes yet');
         return res.status.json({message: 'Be the first to vote'})
     }
-    const challengeObjectId = new mongoose.ObjectId(challengeId);
+    const challengeObjectId = new mongoose.Types.ObjectId(challengeId);
     try {
         const votes = await Vote.aggregate([
             {
@@ -99,7 +99,7 @@ router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
                 }
             }
         ])
-        const totalVote = await votes.countDocuments({challenge: challengeObjectId})
+        const totalVote = await vote.countDocuments({challenge: challengeObjectId})
         if (!votes) {
             console.log("No votes found");
             return res.status(404).json({ message: "No votes found" });
