@@ -9,6 +9,14 @@ router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
     const { text } = req.body;
     const user = req.user._id;
     const challengeId = req.params.challengeId;
+    const existingUser = await Vote.findOne({ user, challenge: challengeId });
+    const now = new Date();
+    const time = new Date(challengeId.time);
+    const start = new Date(challengeId.startDate);
+    const end = new Date(challengeId.endDate);
+    start.setHours(time.getHours());
+    start.setMinutes(time.getMinutes());
+    start.setSeconds(0);
     try {
         if (!text) {
             console.log("No text provided");
@@ -16,10 +24,17 @@ router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
         }
         const challenge = await Challenge.findById(challengeId);
         if(!challenge) {
-            console.log("Challenge not found");
             return res.status(404).json({ message: "Challenge not found" });
         }
-        const existingUser = await Vote.findOne({ user, challenge: challenge._id });
+        
+        if( now >= start) {
+            console.log("Challenge has already started, voting is closed");
+            return res.status(400).json({ message: "Challenge has already started, voting is closed" });
+        }
+        if( now >= end ) {
+            console.log("Challenge has already ended, voting is closed");
+            return res.status(400).json({ message: "Challenge has already ended, voting is closed" });
+        }
         if(existingUser) {
             console.log("User has already voted on this challenge");
             return res.status(400).json({ message: "User has already voted on this challenge" });
@@ -27,9 +42,8 @@ router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
             const newVote = new Vote({
                 text,
                 user,
-                challenge: challenge._id,
+                challenge: challengeId,
             });
-           
             await newVote.save();
             const populatedVote = await Vote.findById(newVote._id).populate('user', 'username avatarUrl').populate('challenge');
             req.app.get('io').emit('new vote created', {
@@ -41,7 +55,7 @@ router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
                 },
                 text: populatedVote.text,
             })
-            console.log("Vote submitted:", newVote);
+            console.log("Vote submitted:");
             res.status(201).json({ message: "Vote submitted", vote: newVote, populatedVote });
         }
     } catch (error) {
@@ -96,7 +110,13 @@ router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
                 }
             }
         ])
-        return res.send({ votes });
+        const totalVotes = await Vote.countDocuments({challenge: challengeObjectId })
+        return res.send({ 
+            votes,
+            currentPage: page,
+            totalVotes,
+            totalPages: Math.ceil(totalVotes / limit)
+        });
     } catch (error) {
         console.error("Error retrieving votes:", error);
         res.status(500).json({ message: "Error retrieving votes" });

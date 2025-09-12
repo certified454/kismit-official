@@ -117,8 +117,8 @@ router.get("/all", protectRoute, async (req, res) => {
             }
         }
     ])
-    const totalVotes = await Vote.countDocuments();
-    res.send({ challenges, totalVotes });
+    const totalChallenge = await Vote.countDocuments();
+    res.send({ challenges, currentPage: page,  totalChallenge, totalPages: Math.ceil(totalChallenge / limit),});
 })
 
 router.get('/:challengeId', protectRoute, async (req, res) => {
