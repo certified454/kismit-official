@@ -13,8 +13,8 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
     try {
         const postId = req.params.postId;
         const { text, audio, watchedAd } = req.body;
-
         const post = await Post.findById(postId);
+        
         if (!post) {
             return res.status(404).json({ message: "Post not found with the id" });
         }
@@ -24,28 +24,8 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
         if (text && audio) {
             return res.status(400).json({ message: "You can only comment with text or audio at a time" });
         }
-
         let audioUrl = null;
         if (audio) {
-            // Require ad watch for audio comments
-            if (!watchedAd) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const audioCountAudio = await Comment.countDocuments({
-                    user: req.user._id,
-                    audio: { $ne: null },
-                    createdAt: { $gte: today }
-                });
-                if (audioCountAudio >= 3) {
-                    return res.status(400).json({
-                        message: "You've reached your daily audio comment limit. Please watch an ad or subscribe to continue using audio comments"
-                    });
-                } else {
-                    return res.status(403).json({
-                        message: "You must watch a rewarded ad to comment with audio."
-                    });
-                }
-            }
             const uploadedAudioToCloudinary = await cloudinary.uploader.upload(audio, {
                 resource_type: 'auto',
             });
