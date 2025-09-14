@@ -14,7 +14,7 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
         const postId = req.params.postId;
         const { text, audio, watchedAd } = req.body;
         const post = await Post.findById(postId);
-        
+
         if (!post) {
             return res.status(404).json({ message: "Post not found with the id" });
         }
@@ -55,7 +55,7 @@ router.post("/post/:postId", protectRoute, async (req, res) => {
             audio: populatedComment.audio,
             createdAt: populatedComment.createdAt
         });
-
+        console.log(newComment)
         res.status(201).json(populatedComment);
     } catch (error) {
         console.error(error, "error creating comment");
