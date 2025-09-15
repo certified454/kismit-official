@@ -2,6 +2,7 @@ import express from 'express';
 
 import Post from "../modules/post.js"
 import Comment from '../modules/comment.js';
+import Tag from '../modules/tag.js';
 import cloudinary from '../lib/cloudinary.js';
 import protectRoute from '../middleware/auth.middleware.js';
 
@@ -9,7 +10,31 @@ const router = express.Router();
 
 router.post("/register", protectRoute,  async (req, res) => {
     try { 
-        const { caption, image } = req.body;
+        const { caption, image, music } = req.body;
+
+        //extract tags and mentions from caption
+        const tagRegrex = /#(\w+)/g;
+        const mentionRegrex = /@(\w+)/g;
+
+        const extractedTags = caption.match(tagRegrex);
+        const extractedMentions  = caption.match(mentionRegrex);
+
+        const tags = extractedTags ? extractedTags.map(tag => tag.substring(1)) : [];
+        const mentions = extractedMentions ? extractedMentions.map(mention => mention.substring(1)) : [];
+
+        // create tag documents if they don't exist
+        for (const tagName of tags) {
+            let tag = await Tag.findOne({name: tagName});
+            if (!tag) {
+                tag = new Tag({name: tagName, posts: [newPost._id]})
+                await tag.save();
+                console.log(`Tag ${tagName} created and associated with post ${newPost._id}`);
+            } else {
+                tag.posts.push(newPost._id);
+                await tag.save();
+                console.log(`Post ${newPost._id} associated with existing tag ${tagName}`);
+            }
+        }
 
         if ( !caption || !image ) {
             return res.status(400).json({message: "All fields are required"})
@@ -20,10 +45,14 @@ router.post("/register", protectRoute,  async (req, res) => {
         const imageUrl = uploadResponse.secure_url;
 
         //save to data base
+        
         const newPost = new Post({
             caption,
             image: imageUrl,
-            user: req.user._id
+            user: req.user._id,
+            tags,
+            mentions,
+            music
         })
 
         await newPost.save()
@@ -37,6 +66,8 @@ router.post("/register", protectRoute,  async (req, res) => {
                 profilePicture: populatedPost.user.profilePicture
             },
             caption: populatedPost.caption,
+            tags: populatedPost.tags,
+            mentions: populatedPost.mentions,
             image: populatedPost.image,
             commentsCount: populatedPost.commentsCount,
             likesCount: populatedPost.likesCount,

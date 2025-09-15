@@ -30,7 +30,17 @@ const postSchema = new mongoose.Schema({
     likesCount: {
         type: Number,
         default: 0
-    }
+    },
+    tags: [{
+        type: String,
+    }],
+    mentions: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    music: {
+        type: String,
+    },
 }, { timestamps: true });
 
 //pre hook to delete any data associated with a post
