@@ -34,6 +34,10 @@ const postSchema = new mongoose.Schema({
     tags: [{
         type: String,
     }],
+    tag: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tag'
+    },
     mentions: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
