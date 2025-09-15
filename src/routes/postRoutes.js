@@ -11,18 +11,28 @@ const router = express.Router();
 
 router.post("/register", protectRoute,  async (req, res) => {
     try { 
-        const { caption, image, tag, mentions: [], music } = req.body;
+        const { caption, image, music } = req.body;
 
-        //add # if a user forgets to add it
-        const formattedTags = tag.map(tag => tag.startsWith('#') ? tag.slice(1) : tag);
-        const formattedMentions = mentions.map(mention => mention.startsWith('@') ? mention.slice(1) : mention);
+        //extract tags and mentions from caption
+        const tagRegrex = /#(\w+)/g;
+        const mentionRegrex = /@(\w+)/g;
+
+        const extractedTags = caption.match(tagRegrex);
+        const extractedMentions  = caption.match(mentionRegrex);
+
+        const tags = extractedTags ? extractedTags.map(tag => tag.substring(1)) : [];
+        const mentions = extractedMentions ? extractedMentions.map(mention => mention.substring(1)) : [];
+
         if ( !caption || !image ) {
             return res.status(400).json({message: "All fields are required"})
         }
         
+        //upload image to cloudinary
         const uploadResponse = await cloudinary.uploader.upload(image);
         const imageUrl = uploadResponse.secure_url;
 
+        //save to data base
+          //convert mentions usernames to objectIds
         const mentionedUserIds = [];
         for (const username of mentions) {
             const user = await User.findOne({username});
@@ -35,12 +45,12 @@ router.post("/register", protectRoute,  async (req, res) => {
             caption,
             image: imageUrl,
             user: req.user._id,
-            tags: formattedTags,
+            tags,
             mentions: mentionedUserIds,
             music
         })
         // create tag documents if they don't exist
-        for (const tagName of formattedTags) {
+        for (const tagName of tags) {
             let tag = await Tag.findOne({name: tagName});
             if (!tag) {
                 tag = new Tag({name: tagName, posts: [newPost._id]})
