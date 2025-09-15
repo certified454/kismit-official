@@ -35,7 +35,7 @@ router.post("/register", protectRoute,  async (req, res) => {
           //convert mentions usernames to objectIds
         const mentionedUserIds = [];
         for (const username of mentions) {
-            const user = await User.findOne({username});
+            const user = await User.findOne({username: new RegExp(`^${username}$`, 'i')});
             if (user) {
                 mentionedUserIds.push(user._id);
             }
@@ -74,7 +74,7 @@ router.post("/register", protectRoute,  async (req, res) => {
                 profilePicture: populatedPost.user.profilePicture
             },
             caption: populatedPost.caption,
-            tags: populatedPost.tags,
+            tag: populatedPost.tags,
             mentions: populatedPost.mentions,
             image: populatedPost.image,
             commentsCount: populatedPost.commentsCount,
