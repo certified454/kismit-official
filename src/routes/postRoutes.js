@@ -11,10 +11,10 @@ const router = express.Router();
 
 router.post("/register", protectRoute,  async (req, res) => {
     try { 
-        const { caption, image, tags: [], mentions: [], music } = req.body;
+        const { caption, image, tag, mentions: [], music } = req.body;
 
         //add # if a user forgets to add it
-        const formattedTags = Tag.map(tag => tag.startsWith('#') ? tag.slice(1) : tag);
+        const formattedTags = tag.map(tag => tag.startsWith('#') ? tag.slice(1) : tag);
         const formattedMentions = mentions.map(mention => mention.startsWith('@') ? mention.slice(1) : mention);
         if ( !caption || !image ) {
             return res.status(400).json({message: "All fields are required"})
