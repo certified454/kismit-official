@@ -26,13 +26,9 @@ router.post("/register", protectRoute,  async (req, res) => {
         if ( !caption || !image ) {
             return res.status(400).json({message: "All fields are required"})
         }
-        
-        //upload image to cloudinary
         const uploadResponse = await cloudinary.uploader.upload(image);
         const imageUrl = uploadResponse.secure_url;
 
-        //save to data base
-          //convert mentions usernames to objectIds
         const mentionedUserIds = [];
         for (const username of mentions) {
             const user = await User.findOne({username: new RegExp(`^${username}$`, 'i')});
