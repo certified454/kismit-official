@@ -64,6 +64,7 @@ router.post("/register", protectRoute,  async (req, res) => {
         }
       
         await newPost.save()
+        console.log("Post created successfully:", newPost, mentionedUserIds);
         // emit new post event
         const populatedPost = await Post.findById(newPost._id).populate('user', 'username profilePicture');
         req.app.get('io').emit('new post created', {
