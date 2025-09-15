@@ -22,20 +22,6 @@ router.post("/register", protectRoute,  async (req, res) => {
         const tags = extractedTags ? extractedTags.map(tag => tag.substring(1)) : [];
         const mentions = extractedMentions ? extractedMentions.map(mention => mention.substring(1)) : [];
 
-        // create tag documents if they don't exist
-        for (const tagName of tags) {
-            let tag = await Tag.findOne({name: tagName});
-            if (!tag) {
-                tag = new Tag({name: tagName, posts: [newPost._id]})
-                await tag.save();
-                console.log(`Tag ${tagName} created and associated with post ${newPost._id}`);
-            } else {
-                tag.posts.push(newPost._id);
-                await tag.save();
-                console.log(`Post ${newPost._id} associated with existing tag ${tagName}`);
-            }
-        }
-
         if ( !caption || !image ) {
             return res.status(400).json({message: "All fields are required"})
         }
@@ -54,7 +40,19 @@ router.post("/register", protectRoute,  async (req, res) => {
             mentions,
             music
         })
-
+        // create tag documents if they don't exist
+        for (const tagName of tags) {
+            let tag = await Tag.findOne({name: tagName});
+            if (!tag) {
+                tag = new Tag({name: tagName, posts: [newPost._id]})
+                await tag.save();
+                console.log(`Tag ${tagName} created and associated with post ${newPost._id}`);
+            } else {
+                tag.posts.push(newPost._id);
+                await tag.save();
+                console.log(`Post ${newPost._id} associated with existing tag ${tagName}`);
+            }
+        }
         await newPost.save()
         // emit new post event
         const populatedPost = await Post.findById(newPost._id).populate('user', 'username profilePicture');
