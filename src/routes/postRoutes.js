@@ -5,6 +5,7 @@ import Comment from '../modules/comment.js';
 import Tag from '../modules/tag.js';
 import cloudinary from '../lib/cloudinary.js';
 import protectRoute from '../middleware/auth.middleware.js';
+import User from '../modules/user.js';
 
 const router = express.Router();
 
@@ -31,13 +32,21 @@ router.post("/register", protectRoute,  async (req, res) => {
         const imageUrl = uploadResponse.secure_url;
 
         //save to data base
-        
+          //convert mentions usernames to objectIds
+        const mentionedUserIds = [];
+        for (const username of mentions) {
+            const user = await User.findOne({username});
+            if (user) {
+                mentionedUserIds.push(user._id);
+            }
+        };
+
         const newPost = new Post({
             caption,
             image: imageUrl,
             user: req.user._id,
             tags,
-            mentions,
+            mentions: mentionedUserIds,
             music
         })
         // create tag documents if they don't exist
@@ -53,6 +62,7 @@ router.post("/register", protectRoute,  async (req, res) => {
                 console.log(`Post ${newPost._id} associated with existing tag ${tagName}`);
             }
         }
+      
         await newPost.save()
         // emit new post event
         const populatedPost = await Post.findById(newPost._id).populate('user', 'username profilePicture');
