@@ -124,6 +124,14 @@ router.get("/", protectRoute, async (req, res) => {
                 }
             },
             {
+                $lookup: {
+                    from: 'tags',
+                    localField: 'tags',
+                    foreignField: 'name',
+                    as: 'tags'
+                }
+            },
+            {
                 $addFields: {
                     commentsCount: { $size: '$comments' },
                     likesCount: { $size: { $ifNull: ['$like', []] } },
@@ -137,6 +145,9 @@ router.get("/", protectRoute, async (req, res) => {
                     _id: 1,
                     caption: 1,
                     image: 1,
+                    tags: { name: 1 },
+                    mentions: 1,
+                    music: 1,
                     createdAt: 1,
                     updatedAt: 1,
                     user: {
