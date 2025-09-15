@@ -64,7 +64,6 @@ router.post("/register", protectRoute,  async (req, res) => {
         }
       
         await newPost.save()
-        console.log("Post created successfully:", newPost, mentionedUserIds);
         // emit new post event
         const populatedPost = await Post.findById(newPost._id).populate('user', 'username profilePicture');
         req.app.get('io').emit('new post created', {
@@ -75,9 +74,10 @@ router.post("/register", protectRoute,  async (req, res) => {
                 profilePicture: populatedPost.user.profilePicture
             },
             caption: populatedPost.caption,
-            tag: populatedPost.tags,
-            mentions: populatedPost.mentions,
             image: populatedPost.image,
+            tags: populatedPost.tags,
+            mentions: populatedPost.mentions,
+            music: populatedPost.music,
             commentsCount: populatedPost.commentsCount,
             likesCount: populatedPost.likesCount,
             createdAt: populatedPost.createdAt
