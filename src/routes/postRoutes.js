@@ -193,6 +193,64 @@ router.get("/:postId", protectRoute, async (req, res) => {
     }
 })
 
+router.put('/:postId', protectRoute, async (req, res) => {
+    const postId = req.params.postId;
+    const { caption } = req.body;
+    try {
+        const post = await Post.findById(postId)
+        if (!post) {
+            return res.status(404).json({message: 'No post found'})
+        };
+        if (post.user.toString() !== req.user._id.toString()) {
+            return res.status(401).json({message: 'Unauthorized'})
+        };
+        if (!caption) {
+            return res.status(404).json({message: 'Caption not modified', post})
+        };
+        if(caption === post.caption) {
+            return res.status(400).json({message: 'No changes made to caption', post})
+        };
+        post.caption = caption;
+
+        const tagRegrex = /#(\w+)/g;
+        const mentionRegrex = /@(\w+)/g;
+
+        const extractedTags = caption.match(tagRegrex);
+        const extractedMentions  = caption.match(mentionRegrex);
+
+        const tags = extractedTags ? extractedTags.map(tag => tag.substring(1)) : [];
+        const mentions = extractedMentions ? extractedMentions.map(mention => mention.substring(1)) : [];
+        
+        const mentionedUserIds = [];
+        for (const username of mentions) {
+            const user = await User.findOne({username: new RegExp(`^${username}$`, 'i')});
+            if(user) {
+                mentionedUserIds.push(user._id)
+            }
+        };
+      
+        post.mentions = mentionedUserIds.length > 0 ? mentionedUserIds : [];
+        // create tag documents if they don't exist
+        for (const tagName of tags) {
+            let tag = await Tag.findOne({name: tagName})
+            if(!tag) {
+                tag = new Tag({name: tagName, posts: [postId] })
+                await tag.save()
+            } else if (!tag.posts.includes(postId)) {
+                tag.posts.push(postId)
+                await tag.save()
+            }
+        };
+        post.tags = tags;
+        
+        await post.save();
+        req.app.get('io').emit('editedPost', {postId, updatedFields: {caption, tags, mentions: post.mentions}});
+        res.json({message: 'Post updated successfully', post});
+    } catch (error) {
+        console.error(error, "error updating post");
+        res.status(500).json({ message: "error updating post" });
+    }
+})
 router.delete("/:id", protectRoute, async (req, res) => {
     try {
         const postId = req.params.id
@@ -213,4 +271,4 @@ router.delete("/:id", protectRoute, async (req, res) => {
     }
 });
 
-export default router;
+export default router;''

@@ -26,8 +26,7 @@ router.get('/:userId', protectRoute, async (req, res) => {
        console.error(error, "Error fetching user profile");
        res.status(500).json({ message: "Internal server error", success: false });
     }
-})
-
+});
 router.put('/:userId', protectRoute, async (req, res) => {
     const userId = req.params.userId;
     const {username, email, profilePicture, bio, fullName, location, gender, hobbies, phone} = req.body;
@@ -68,8 +67,7 @@ router.put('/:userId', protectRoute, async (req, res) => {
         console.error(error, "failed updated user");
        res.status(500).json({ message: "Internal server error", success: false });
     }
-})
-
+});
 router.get('/:userId/posts', protectRoute, async (req, res) => {
     try {
         const userId = req.params.userId;
@@ -79,7 +77,7 @@ router.get('/:userId/posts', protectRoute, async (req, res) => {
         console.error(error, "Error fetching user posts");
         res.status(500).json({ message: "Internal server error", success: false });
     }
-})
+});
 router.get('/:userId/analysis', protectRoute, async ( req, res) =>{
     try{
         const userId = req.params.userId;
@@ -89,9 +87,7 @@ router.get('/:userId/analysis', protectRoute, async ( req, res) =>{
         console.error(error, "Internal server error ")
         res.status(500).json({message: 'Internal sever error'})
     }
-})
-
-//get expoPushToken and save it to the database
+});
 router.post('/:userId/expoPushToken', protectRoute, async (req, res) => {
   const userId = req.params.userId;
   const { expoPushToken } = req.body;
@@ -204,8 +200,7 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
             success: false
         })
     }
-})
-
+});
 router.get('/:userId/followers', protectRoute, async (req, res) => {
     const userId = req.params.userId;
     const page = parseInt(req.query.page) || 1;
@@ -254,7 +249,7 @@ router.get('/:userId/followers', protectRoute, async (req, res) => {
         console.error('Error fetching followers:', error);
         res.status(500).json({ message: 'Internal server error', success: false });
     }
-})
+});
 router.get('/:userId/following', protectRoute, async (req, res) => {
     const userId = req.params.userId;
     const page = parseInt(req.query.page) || 1;
@@ -303,6 +298,6 @@ router.get('/:userId/following', protectRoute, async (req, res) => {
         console.error('Error fetching followed users:', error);
         res.status(500).json({ message: 'Internal server error', success: false });
     }
-})
+});
 
 export default router;
