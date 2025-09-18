@@ -12,7 +12,7 @@ const router = express.Router();
 router.post("/post/:postId", protectRoute, async (req, res) => {
     try {
         const postId = req.params.postId;
-        const { text, audio, watchedAd } = req.body;
+        const { text, audio } = req.body;
         const post = await Post.findById(postId);
 
         if (!post) {
@@ -128,13 +128,56 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
         return res.status(500).json({ message: 'Internal server error', error: error.message })
     }
 })
-
-router.delete("/:commentId", protectRoute, async (req, res) => {
+router.get("/:postId/comment", protectRoute, async (req, res) => {
+    const commentId = req.params.commentId
     try {
-        const comment = await Comment.findOneAndDelete({_id: req.params.commentId});
+        const comment = await Comment.findById(commentId)
+        .populate('user', 'username profilePicture')
 
+        res.send({ comment });
+    } catch (error) {
+        console.error(error, "error fetching user comments");
+        res.status(500).json({ message: "error fetching user comments" });
+    }
+})
+router.put('/:postId/comment', protectRoute, async (req, res) => {
+    const commentId = req.params.commentId;
+    const { text } = req.body;
+
+    try {
+        const comment = await Comment.findById(commentId)
+        if (!comment) {
+            return res.status(404).json({message: 'comment not found'});
+        };
+        if(comment.user.toString() !== comment.user._id.toString()) {
+            return res.status(401).json({message: 'Unauthorized'})
+        };
+        if(!text) {
+            return res.status(404).json({message: 'text not found', comment})
+        };
+        if(text === comment.text) {
+            return res.status(404).json({message: "no chnages applied", comment})
+        };
+        comment.caption = caption;
+
+        await comment.save();
+        res.status(200).json({comment})
+    } catch (error) {
+        console.log(error, "failed to update comment")
+        res.status(500).json({message: "Failed to update comment"})
+    }
+})
+router.delete("/id", protectRoute, async (req, res) => {
+    try {
+        const commentId = req.params.commentId
+
+        const comment = await Comment.findById(commentId)
         if (!comment)  return res.stat(404).json({ messgae: " Comment not found"});
 
+        if (comment.user.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: "Unauthorized" })
+        }
+        await comment.deleteOne();
         await Post.findByIdAndUpdate(comment.post, { $inc: { commentsCount: -1 }});
         
         res.json({ messgae: "Comment is deleted"});

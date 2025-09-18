@@ -242,10 +242,9 @@ router.put('/:postId', protectRoute, async (req, res) => {
             }
         };
         post.tags = tags;
-        
         await post.save();
         req.app.get('io').emit('editedPost', {postId, updatedFields: {caption, tags, mentions: post.mentions}});
-        res.json({message: 'Post updated successfully', post});
+        res.status(200).json({message: 'Post updated successfully', post});
     } catch (error) {
         console.error(error, "error updating post");
         res.status(500).json({ message: "error updating post" });
@@ -259,8 +258,9 @@ router.delete("/:id", protectRoute, async (req, res) => {
         
         if (!post) return res.status(404).json({ message: "Post not found" });
 
-        if (post.user.toString() !== req.user._id.toString())
+        if (post.user.toString() !== req.user._id.toString()) {
             return res.status(401).json({ message: "Unauthorized" })
+        }
 
         await post.deleteOne();
         res.json({ message: "Post deleyed Successfully" })
