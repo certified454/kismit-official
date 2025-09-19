@@ -162,7 +162,7 @@ router.put('/post/:postId/:commentId', protectRoute, async (req, res) => {
             console.log("No changes applied")
             return res.status(404).json({message: "no changes applied", comment})
         };
-        comment.caption = caption;
+        comment.text = text;
 
         await comment.save();
         res.status(200).json({comment})
@@ -171,12 +171,12 @@ router.put('/post/:postId/:commentId', protectRoute, async (req, res) => {
         res.status(500).json({message: "Failed to update comment"})
     }
 })
-router.delete("/id", protectRoute, async (req, res) => {
+router.delete("/:id", protectRoute, async (req, res) => {
     try {
-        const commentId = req.params.commentId
+        const commentId = req.params.id
 
         const comment = await Comment.findById(commentId)
-        if (!comment)  return res.stat(404).json({ messgae: " Comment not found"});
+        if (!comment)  return res.status(404).json({ message: " Comment not found"});
 
         if (comment.user.toString() !== req.user._id.toString()) {
             return res.status(401).json({ message: "Unauthorized" })
