@@ -128,7 +128,7 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
         return res.status(500).json({ message: 'Internal server error', error: error.message })
     }
 })
-router.get("/:postId/comment", protectRoute, async (req, res) => {
+router.get("/:postId/:commentId", protectRoute, async (req, res) => {
     const commentId = req.params.commentId
     try {
         const comment = await Comment.findById(commentId)
@@ -140,7 +140,7 @@ router.get("/:postId/comment", protectRoute, async (req, res) => {
         res.status(500).json({ message: "error fetching user comments" });
     }
 })
-router.put('/:postId/comment', protectRoute, async (req, res) => {
+router.put('/:postId/:commentId', protectRoute, async (req, res) => {
     const commentId = req.params.commentId;
     const { text } = req.body;
 
