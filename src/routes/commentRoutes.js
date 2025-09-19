@@ -140,7 +140,7 @@ router.get("/post/:postId/:commentId", protectRoute, async (req, res) => {
         res.status(500).json({ message: "error fetching user comments" });
     }
 })
-router.put('/:postId/:commentId', protectRoute, async (req, res) => {
+router.put('/post/:postId/:commentId', protectRoute, async (req, res) => {
     const commentId = req.params.commentId;
     const { text } = req.body;
 
