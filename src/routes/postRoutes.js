@@ -188,7 +188,7 @@ router.get("/:postId", protectRoute, async (req, res) => {
 
         res.send({ post, liked });
     } catch (error) {
-        console.error(error, "error fetching user posts");
+        console.error(error, "error fetching user post");
         res.status(500).json({ message: "error fetching user posts" });
     }
 })

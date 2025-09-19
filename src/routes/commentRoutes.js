@@ -128,7 +128,7 @@ router.get("/post/:postId/comments", protectRoute, async (req, res) =>{
         return res.status(500).json({ message: 'Internal server error', error: error.message })
     }
 })
-router.get("/:postId/:commentId", protectRoute, async (req, res) => {
+router.get("/post/:postId/:commentId", protectRoute, async (req, res) => {
     const commentId = req.params.commentId
     try {
         const comment = await Comment.findById(commentId)
@@ -136,7 +136,7 @@ router.get("/:postId/:commentId", protectRoute, async (req, res) => {
 
         res.send({ comment });
     } catch (error) {
-        console.error(error, "error fetching user comments");
+        console.error(error, "error fetching user comment");
         res.status(500).json({ message: "error fetching user comments" });
     }
 })
@@ -147,16 +147,20 @@ router.put('/:postId/:commentId', protectRoute, async (req, res) => {
     try {
         const comment = await Comment.findById(commentId)
         if (!comment) {
+            console.log("Comment not found")
             return res.status(404).json({message: 'comment not found'});
         };
         if(comment.user.toString() !== comment.user._id.toString()) {
+            console.log("Unauthorized to update this comment")
             return res.status(401).json({message: 'Unauthorized'})
         };
         if(!text) {
+            console.log("No text found to update")
             return res.status(404).json({message: 'text not found', comment})
         };
         if(text === comment.text) {
-            return res.status(404).json({message: "no chnages applied", comment})
+            console.log("No changes applied")
+            return res.status(404).json({message: "no changes applied", comment})
         };
         comment.caption = caption;
 
