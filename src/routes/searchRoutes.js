@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import User from "../modules/user.js";
-import Post from "../modules/post.js";
-import Analysis from "../modules/analysis.js";
+import Tag from '../modules/tag.js';
 import express from "express";
 import protectRoute from "../middleware/auth.middleware.js";
 
@@ -16,7 +15,7 @@ router.get('/search', protectRoute, async (req, res) => {
         }
 
         const userSearch = await User.find({ username: { $regex: query, $options: 'i' } });
-        const tagSearch = await Post.find({ 'tags.name': { $regex: query, $options: 'i' } });
+        const tagSearch = await Tag.find({ name: { $regex: query, $options: 'i' } });
 
         // Always return both arrays
         res.status(200).json({ users: userSearch, tags: tagSearch });
