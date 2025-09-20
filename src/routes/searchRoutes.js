@@ -20,7 +20,7 @@ router.get('/search', protectRoute, async (req, res) => {
             console.log({ message: 'No user match the search' })
             return res.status(200).json({ message: 'No user match the search' })
         }
-        const tagSearch = await Post.find({ 'tags.name': { $regrex: query, $options: 'i' }})
+        const tagSearch = await Post.find({ 'tags.name': { $regex: query, $options: 'i' }})
         if (tagSearch.length === 0) {
             console.log({ message: 'No tag match the search' })
             return res.status(200).json({ message: 'No tag match the search' })
