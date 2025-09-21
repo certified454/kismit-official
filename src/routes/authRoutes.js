@@ -525,7 +525,6 @@ router.post('/forgotten-password', async (req, res) => {
     }
 })
 
-// Reset password
 router.post('/reset-password', async (req, res) => {
   const { token, newPassword } = req.body;
   try {
@@ -549,6 +548,7 @@ router.post('/reset-password', async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
