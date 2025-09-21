@@ -7,24 +7,30 @@ import Compete from '../modules/compete.js';
 const router = express.Router();
 
 router.post('/register', protectRoute, async (req, res) => {
-    const { name, players, teams } = req.body;
+    const { name, teams, creatorId, targetedUserId } = req.body;
     try {
         if (!name) {
             console.log('Name is required');
             return res.status(400).json({ error: 'Name is required' });
         };
-        if (!players || players.length < 1) {
-            console.log('At least one player is required');
-            return res.status(400).json({ error: 'At least one player is required' });
-        };
         if (!teams || teams.length < 2) {
             console.log('At least two teams are required');
             return res.status(400).json({ error: 'At least two teams are required' });
         };
+        if(!creatorId || !targetedUserId){ 
+            return res.status(400).json({ error: 'creatorId and targetedUserId are required' });
+        }
+    
+        const creator = await User.findById(creatorId);
+        const targetedUser = await User.findById(targetedUserId);
+        if (!creator || !targetedUser) {
+            return res.status(404).json({ error: 'creator or targeted user not found' });
+        }
         const newCompete = new Compete({
             name,
-            players,
             teams,
+            creator: creator._id,
+            targetedUser: targetedUser._id,
         });
         await newCompete.save();
         res.status(201).json({ message: 'Compete created successfully', compete: newCompete });
