@@ -152,18 +152,18 @@ router.post("/register", async (req, res) => {
                 </head>
                 <body>
                     <div class="container">
-                        <h1>Verify Your Email</h1>
+                        <h1>New Account Registration</h1>
                         <img src="https://github.com/certified454/My-portfolio/blob/326ea0bcae6116cb6b6058825fe4df08f3bec7c1/adaptive-icon.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
                         <p>Hi ${username},</p>
                         <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this code below:</p>
                         <h2>${verificationCode}</h2>
                         <p>This code will expire in 15 minutes.</p>
                         <p class="note" >If you did not create an account, no further action is required. Feel free to ignore this email.</p>
-                        <p class="thank-you">Thank you!</p>
+                        <p class="thank-you">Else, proceed to verify email.</p>
                         <p>The Kismet Team KSM ${process.env.OWNER_EMAIL}</p>
                     </div>
                    <div class="footer">
-                        <p class="note" >If you have any questions, feel free to reach out to our support team.</p>
+                        <p class="note" >If you have any questions, feel free to reach out to our support team. We're here to help!</p>
                         <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can <a href="unsubscribe">unsubscribe</a> at any time.</p>
                         <p style="text-align: center; font-size: 12px; color: #777777;">&copy; ${new Date().getFullYear()} Kismet. All rights reserved.</p>
                     </div>
@@ -172,7 +172,7 @@ router.post("/register", async (req, res) => {
             `,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
+    transporter.sendMail(mailOptions, (error) => {
       if (error) {
         console.log("Error Sending Verification Email", error);
         return res
@@ -202,7 +202,7 @@ router.post("/register", async (req, res) => {
       isVerified: false,
       isOwner: email === process.env.OWNER_EMAIL,
     });
-    //check if everything is okay before a user can now be save to the database
+
     if (!user) {
       console.log("User is not valid");
       return res.status(400).json({ message: "User is not valid" });
@@ -422,9 +422,133 @@ router.post("/resend-code", async (req, res) => {
   }
 });
 
-router.post('/forgoten-password', async (req, res) => {
-  
+router.post('/forgotten-password', async (req, res) => {
+    const { email } = req.body;
+    try {
+      if (!email) return res.status(400).json({ message: "Email is required" });
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        console.log("User not found");
+        return res.status(400).json({ message: "User not found" });
+      }
+
+      const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
+
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        port: 465,
+        secure: true,
+        host: "smtp.gmail.com",
+        auth: {
+          user: process.env.EMAIL,
+          pass: process.env.EMAIL_PASSWORD,
+        }, 
+      });
+     
+      const mailOptions = {
+        from: process.env.EMAIL,
+        to: email,
+        subject: "Password Reset",
+        html: `
+                <Doctype html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Reset your password</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            background-color: #ffffff;
+                            color: #000000;
+                            margin: 0;
+                            padding: 20px;
+                            line-height: 1.6;
+                        }
+                        .container {
+                            max-width: 600px;
+                            margin: 0 auto;
+                            padding: 30px;
+                            background-color: #f5f5f5;
+                            border-radius: 5px;
+                        }
+                        .footer {
+                            margin-top: 25px;
+                            padding: 10px;
+                            background-color: #f5f5f5;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #777777;
+                            border-radius: 5px;
+                        }
+                        h1 {
+                            color: #4B0082;
+                            font-size: 24px;
+                            margin-bottom: 20px;
+                            text-align: center;
+                        }
+                  </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>Password Reset Request</h1>
+                        <p>Hi ${user.username},</p>
+                        <p>We received a request to reset your password. Click the link below to set a new password:</p>
+                        <p><a href="${resetLink}">Reset Password</a></p>
+                        <p>This link will expire in 1 hour.</p>
+                        <p class="note" >If you did not request a password reset, no further action is required. Feel free to ignore this email.</p>
+                        <p class="thank-you">Thank you!</p>
+                        <p>The Kismet Team KSM</p>
+                    </div>
+                   <div class="footer">
+                        <p class="note" >If you have any questions, feel free to reach out to our support team.</p>
+                        <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can unsubscribe at any time.</p>
+                        <p style="text-align: center; font-size: 12px; color: #777777;">&copy; ${new Date().getFullYear()} Kismet. All rights reserved.</p>
+                    </div>
+                </body>
+                </html>
+            `,
+      };
+      transporter.sendMail(mailOptions, (error) => {
+        if (error) {
+          console.log("Error sending email", error);
+          return res.status(500).json({ message: "Error sending email" });
+        }
+        console.log("Email sent");
+        return res.status(200).json({ message: `Email sent to ${email}` });
+      });
+    } catch (error) {
+      console.log("Error in forgot password route", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
 })
+
+// Reset password
+router.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  try {
+    if (!token || !newPassword) 
+      return res.status(400).json({ message: "Token and new password are required" });
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+      if (err) return res.status(400).json({ message: "Invalid or expired token" });
+
+      const user = await User.findOne({ email: decoded.email });
+      if (!user) return res.status(400).json({ message: "User not found" });
+      if (newPassword.length < 6)
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+
+      user.password = newPassword;
+      
+      await user.save();
+      res.status(200).json({ message: "Password reset successful" });
+    });
+  } catch (error) {
+    console.log("Error in reset password route", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
