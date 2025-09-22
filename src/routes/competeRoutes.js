@@ -6,7 +6,7 @@ import User from '../modules/user.js';
 const router = express.Router();
 
 router.post('/register', protectRoute, async (req, res) => {
-    const targetedUserObjectId = req.body.userId;
+    const targetedUserObjectId = req.params.userId;
     const currentUserObjectId = req.user._id;
 
     const { name } = req.body;
@@ -29,7 +29,7 @@ router.post('/register', protectRoute, async (req, res) => {
             creator: creator._id,
             targetedUser: targetUser._id
         });
-        
+
         await newCompete.save();
         console.log('Compete created successfully:', newCompete);
         res.status(201).json({ message: 'Compete created successfully', compete: newCompete });
