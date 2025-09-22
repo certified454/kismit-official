@@ -171,6 +171,7 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
                         body: JSON.stringify({
                             to: targetUser.expoPushToken,
                             title:  'New Follower',
+                            image: currentUser.profilePicture,
                             body: `🎉 ${currentUser.username} has followed you`,
                             badge: 1
                         })

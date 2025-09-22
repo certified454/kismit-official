@@ -2,8 +2,7 @@ import mongoose from "mongoose";
 
 const competeSchema = new mongoose.Schema({
     name: {
-        type: String,
-        required: true
+        type: String
     },
     teams: [{
         type: mongoose.Schema.Types.ObjectId,
