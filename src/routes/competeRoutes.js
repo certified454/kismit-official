@@ -6,11 +6,14 @@ import User from '../modules/user.js';
 const router = express.Router();
 
 router.post('/register', protectRoute, async (req, res) => {
-    const targetedUserObjectId = req.params.userId;
-    const currentUserObjectId = req.user._id;
 
+    // get the user making the request to the endpoint
+    const currentUserObjectId = req.user._id;
+    // get the user being challenged from the request params
+    const { targetedUserObjectId } = req.body;
     const { name } = req.body;
 
+    //set the current user as the creator of the compete and the targeted user as the challenged user
     if (targetedUserObjectId === currentUserObjectId.toString()) {
         console.log('You cannot challenge yourself');
         return res.status(400).json({ error: 'You cannot challenge yourself' });
@@ -25,9 +28,9 @@ router.post('/register', protectRoute, async (req, res) => {
         };
 
         const newCompete = new Compete({
-            name,
-            creator: creator._id,
-            targetedUser: targetUser._id
+            creator: currentUserObjectId,
+            targetedUser: targetedUserObjectId,
+            name: name || `Compete between ${creator.username} and ${targetUser.username}`,
         });
 
         await newCompete.save();
