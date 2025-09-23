@@ -2,8 +2,6 @@ import express from 'express';
 import protectRoute from '../middleware/auth.middleware.js';
 import Compete from '../modules/compete.js';
 import User from '../modules/user.js';
-import userProfileRoute from './routes/userProfileRoutes.js';
-import e from 'express';
 
 const router = express.Router();
 
