@@ -5,11 +5,28 @@ import User from '../modules/user.js';
 
 const router = express.Router();
 
+//get the targeted user's info and get his expoPushToken to send a notification
+router.get('/target/:userId', protectRoute, async (req, res) => {
+    const { userId } = req.params.userId;
+    try {
+        const targetUser = await User.findById(userId).select('username profilePicture expoPushToken');
+        if (!targetUser) {
+            console.log('Target user not found');
+            return res.status(404).json({ message: 'Target user not found' });
+        };
+        console.log('Target user found:', targetUser);
+        res.status(200).json({ targetUser });
+    } catch (error) {
+        console.error('Error fetching target user:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    } 
+});
+
 router.post('/register', protectRoute, async (req, res) => {
     const currentUserObjectId = req.user._id;
 
     const { targetedUserObjectId } = req.body;
-    const { description, status, team } = req.body;
+    const { description } = req.body;
 
     //set the current user as the creator of the compete and the targeted user as the challenged user
     if (targetedUserObjectId === currentUserObjectId.toString()) {
@@ -66,39 +83,39 @@ router.post('/register', protectRoute, async (req, res) => {
     }
 });
 
-// ...existing code...
-router.post('/respond', protectRoute, async (req, res) => {
-    const targetedUserId = req.user._id;
-    const { challengerId, description, accepted, team } = req.body;
+// // ...existing code...
+// router.post('/respond', protectRoute, async (req, res) => {
+//     const targetedUserId = req.user._id;
+//     const { challengerId, description, accepted, team } = req.body;
 
-    if (!accepted) {
-        return res.status(200).json({ message: 'Challenge declined.' });
-    }
+//     if (!accepted) {
+//         return res.status(200).json({ message: 'Challenge declined.' });
+//     }
 
-    try {
-        const creator = await User.findById(challengerId);
-        const targetUser = await User.findById(targetedUserId);
+//     try {
+//         const creator = await User.findById(challengerId);
+//         const targetUser = await User.findById(targetedUserId);
 
-        if (!creator || !targetUser) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+//         if (!creator || !targetUser) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
 
-        // Save to DB only if accepted and team is provided
-        const newCompete = new Compete({
-            creator: challengerId,
-            targetedUser: targetedUserId,
-            description: description || `Compete between ${creator.userdescription} and ${targetUser.userdescription}`,
-            status: 'accepted',
-            team // targeted user's team
-        });
+//         // Save to DB only if accepted and team is provided
+//         const newCompete = new Compete({
+//             creator: challengerId,
+//             targetedUser: targetedUserId,
+//             description: description || `Compete between ${creator.userdescription} and ${targetUser.userdescription}`,
+//             status: 'accepted',
+//             team // targeted user's team
+//         });
 
-        await newCompete.save();
-        res.status(201).json({ message: 'Compete accepted and created.', compete: newCompete });
+//         await newCompete.save();
+//         res.status(201).json({ message: 'Compete accepted and created.', compete: newCompete });
 
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+//     } catch (error) {
+//         res.status(500).json({ error: 'Internal server error' });
+//     }
+// });
 // ...existing code...
 
 export default router;
