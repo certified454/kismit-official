@@ -9,7 +9,7 @@ router.post('/register', protectRoute, async (req, res) => {
     const currentUserObjectId = req.user._id;
 
     const { targetedUserObjectId } = req.body;
-    const { description, status, team, teamCounts } = req.body;
+    const { description, status, team } = req.body;
 
     //set the current user as the creator of the compete and the targeted user as the challenged user
     if (targetedUserObjectId === currentUserObjectId.toString()) {
@@ -36,6 +36,13 @@ router.post('/register', protectRoute, async (req, res) => {
             console.log('A competition between these users already exists');
             return res.status(400).json({ message: 'This competition already exists between you and the competing user' });
         };
+        const newCompete = new Compete({
+            creator: currentUserObjectId,
+            targetedUser: targetedUserObjectId,
+            description: description || `Compete between ${creator.userdescription} and ${targetUser.userdescription}`,
+            status: status || 'pending'
+        });
+        console.log('New compete object created:', newCompete);
         // send notification to the targeted user about the new compete challenge usining expo notifications
         if (targetUser.expoPushToken) { 
             try {
@@ -56,40 +63,9 @@ router.post('/register', protectRoute, async (req, res) => {
                 console.error('Error sending push notification:', error);
             }
         }
-        // check if targeted user has added their teams
-        if (!targetUser.teams || targetUser.teams.length < 1) {
-            console.log('Target user has no teams to compete with');
-            return res.status(400).json({ message: 'The user you are trying to challenge has no teams to compete with. Please ask them to add a team first.' });
-        } else if (!creator.teams || creator.teams.length < 1) {
-            console.log('You have no teams to compete with');
-            return res.status(400).json({ message: 'You have no teams to compete with. Please add a team first.' });
-        } else if (team && team.length === 2) {
-            // check if the teams belong to the respective users
-            if (!creator.teams.includes(team[0]) || !targetUser.teams.includes(team[1])) {
-                console.log('One or both teams are not valid');
-                return res.status(400).json({ message: 'Invalid teams selected for the competition' });
-            } else if (team[0] === team[1]) {
-                console.log('You cannot select the same team for both users');
-                return res.status(400).json({ message: 'You cannot select the same team for both users' });
-            } else {
-                const newCompete = new Compete({
-                    creator: currentUserObjectId,
-                    targetedUser: targetedUserObjectId,
-                    description: description || `Compete between ${creator.userdescription} and ${targetUser.userdescription}`,
-                });
-                console.log('New compete object created:', newCompete);
+        await newCompete.save();
+        res.status(201).json({ message: 'Compete created successfully', compete: newCompete });
 
-                if (status === 'accepted' && team && team.length === 2) {
-                    newCompete.status = 'accepted';
-                    newCompete.team = team;
-                } else if (status === 'declined') {
-                    newCompete.status = 'declined';
-                }
-                
-                await newCompete.save();
-                res.status(201).json({ message: 'Compete created successfully', compete: newCompete });
-            }
-        }        
     } catch (error) {
         console.error('Error creating compete:', error);
         res.status(500).json({ error: 'Internal server error' });
