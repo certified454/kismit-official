@@ -1,12 +1,30 @@
 import mongoose from "mongoose";
 
 const competeSchema = new mongoose.Schema({
-    name: {
-        type: String
+    description: {
+        type: String,
+        required: true
     },
-    teams: [{
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'declined', 'completed'],
+        default: 'pending'
+    },
+    creatorScore: {
+        type: Number,
+        default: 0
+    },
+    targetedUserScore: {
+        type: Number,
+        default: 0
+    },
+    team: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Team"
+    },
+    teamCounts: [{
+        type: Number,
+        default: 0
     }],
     creator: {
         type: mongoose.Schema.Types.ObjectId,
