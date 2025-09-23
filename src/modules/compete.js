@@ -22,7 +22,7 @@ const competeSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Team"
     },
-    teamCounts: [{
+    teamsCount: [{
         type: Number,
         default: 0
     }],
