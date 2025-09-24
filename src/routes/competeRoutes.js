@@ -55,8 +55,9 @@ router.post('/register', protectRoute, async (req, res) => {
         }
         
        if (targetUser.expoPushToken) {
+            console.log('Sending notification to:', targetUser.expoPushToken);
             try {
-                await fetch('https://exp.host/--/api/v2/push/send', {
+                const log = await fetch('https://exp.host/--/api/v2/push/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -71,11 +72,16 @@ router.post('/register', protectRoute, async (req, res) => {
                         badge: 1
                     })
                 });
-            } catch (error) {
-                console.error('Error sending push notification:', error);
+            const logdata = await log.json();
+            console.log('Push notification response:', logdata);
+            if (logdata.errors) {
+                console.error('Expo push error:', logdata.errors);
             }
+        } catch (error) {
+            console.error('Error sending push notification:', error);
         }
-        res.status(200).json({ message: 'Challenge sent. Awaiting response.' });
+    }
+    res.status(200).json({ message: 'Challenge sent. Awaiting response.' });
 
     } catch (error) {
         console.error('Error creating compete:', error);
