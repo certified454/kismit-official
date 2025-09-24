@@ -7,7 +7,7 @@ const router = express.Router();
 
 //get the targeted user's info and get his expoPushToken to send a notification
 router.get('/target/:userId', protectRoute, async (req, res) => {
-    const { userId } = req.params.userId;
+    const userId = req.params.userId;
     try {
         const targetUser = await User.findById(userId).select('username profilePicture expoPushToken');
         if (!targetUser) {
