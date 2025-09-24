@@ -53,18 +53,17 @@ router.post('/register', protectRoute, async (req, res) => {
             console.log('A competition between these users already exists');
             return res.status(400).json({ message: 'This competition already exists between you and the competing user' });
         }
-        
-       if (targetUser.expoPushToken) {
-            console.log('Sending notification to:', targetUser.expoPushToken);
+        if (targetUser.expoPushToken) {
+            const acceptLink = `kismit://compete/respond?challengerId=${currentUserObjectId}`;
             try {
-                const log = await fetch('https://exp.host/--/api/v2/push/send', {
+                await fetch('https://exp.host/--/api/v2/push/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         to: targetUser.expoPushToken,
-                        title: 'New challenge for a compete!',
+                        title: 'New challenge for you!',
                         image: creator.profilePicture,
-                        body: `🔥 ${creator.username} has challenged you to a compete! Accept or decline.`,
+                        body: `🔥 ${creator.username} has challenged you to a competition! go to the app to Accept or decline their request. ${acceptLink}`,
                         data: {
                             challengerId: currentUserObjectId,
                             description
@@ -72,56 +71,47 @@ router.post('/register', protectRoute, async (req, res) => {
                         badge: 1
                     })
                 });
-            const logdata = await log.json();
-            console.log('Push notification response:', logdata);
-            if (logdata.errors) {
-                console.error('Expo push error:', logdata.errors);
+            } catch (error) {
+                console.error('Error sending push notification:', error);
             }
-        } catch (error) {
-            console.error('Error sending push notification:', error);
-        }
-    }
-    res.status(200).json({ message: 'Challenge sent. Awaiting response.' });
-
+        } 
+        res.status(200).json({ message: 'Challenge sent. Awaiting response.' });
     } catch (error) {
         console.error('Error creating compete:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// // ...existing code...
-// router.post('/respond', protectRoute, async (req, res) => {
-//     const targetedUserId = req.user._id;
-//     const { challengerId, description, accepted, team } = req.body;
+router.post('/respond', protectRoute, async (req, res) => {
+    const targetedUserId = req.user._id;
+    const { challengerId, description, accepted, team } = req.body;
 
-//     if (!accepted) {
-//         return res.status(200).json({ message: 'Challenge declined.' });
-//     }
+    if (!accepted) {
+        return res.status(200).json({ message: 'Challenge declined.' });
+    }
 
-//     try {
-//         const creator = await User.findById(challengerId);
-//         const targetUser = await User.findById(targetedUserId);
+    try {
+        const creator = await User.findById(challengerId);
+        const targetUser = await User.findById(targetedUserId);
 
-//         if (!creator || !targetUser) {
-//             return res.status(404).json({ message: 'User not found' });
-//         }
+        if (!creator || !targetUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const newCompete = new Compete({
+            creator: challengerId,
+            targetedUser: targetedUserId,
+            description: description || `Compete between ${creator.userdescription} and ${targetUser.userdescription}`,
+            status: 'accepted',
+            team
+        });
 
-//         // Save to DB only if accepted and team is provided
-//         const newCompete = new Compete({
-//             creator: challengerId,
-//             targetedUser: targetedUserId,
-//             description: description || `Compete between ${creator.userdescription} and ${targetUser.userdescription}`,
-//             status: 'accepted',
-//             team // targeted user's team
-//         });
+        await newCompete.save();
+        res.status(201).json({ message: 'Compete accepted and created.', compete: newCompete });
 
-//         await newCompete.save();
-//         res.status(201).json({ message: 'Compete accepted and created.', compete: newCompete });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
-//     } catch (error) {
-//         res.status(500).json({ error: 'Internal server error' });
-//     }
-// });
-// ...existing code...
 
 export default router;
