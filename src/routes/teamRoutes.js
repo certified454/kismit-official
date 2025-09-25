@@ -3,6 +3,7 @@ import express, { request } from "express";
 import team from "../modules/team.js";
 import Player from "../modules/player.js";
 import protectRoute from "../middleware/auth.middleware.js";
+import player from "../modules/player.js";
 
 const router = express.Router();
 
@@ -16,16 +17,17 @@ router.post('/register', protectRoute, async (req, res) => {
             console.log('All fields are required')
             return res.status(400).json({ message: 'All fields are required' });
         }
-        const existingPlayers = await Player.find({ name: { $in: players }, owner: userId });
+        const playerNames = players.map(p => p.trim());
+        const existingPlayers = await Player.find({ name: { $in: playerNames }, owner: userId });
         if (existingPlayers.length > 0) {
             return res.status(400).json({ message: 'You already have players with these names' });
         }
-        if (players.length !== 7) {
+        if (playerNames.length !== 7) {
             console.log('You must add exactly seven players to make a team');
             return res.status(400).json({ message: 'You must add exactly seven players to make a team' });
         }
         const playerIds = [];
-        for (const playerName of players) {
+        for (const playerName of playerNames) {
             const newPlayer = new Player({
                 name: playerName,
                 owner: userId
