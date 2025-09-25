@@ -41,7 +41,8 @@ router.post('/register', protectRoute, async (req, res) => {
         res.status(201).json({ message: 'Team created successfully', team: newTeam
         })
     } catch (error) {
-        
+        console.log('internal server error');
+        res.status(500).json({message: 'internal server error', error: error.message})
     }
 })
 
