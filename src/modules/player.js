@@ -14,11 +14,7 @@ const playerSchema = new mongoose.Schema({
     },
     stats: {
         type: Object,
-    },
-    owner: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-    },
+    }
 }, { timestamps: true });
 
 export default mongoose.model("Player", playerSchema);

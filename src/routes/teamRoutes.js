@@ -18,15 +18,16 @@ router.post('/register', protectRoute, async (req, res) => {
         }
         // create players name if they dont exist
         const playerIds = [];
-        for (const player of players) {
-            let player = await Player.findOne({ name: player.name, position: player.position });
+        for (const playerName of players) {
+            let player = await Player.findOne({ name: playerName.name, position: playerName.position });
             if (!player) {
-                player = new Player({ name: player.name, position: player.position });
+                player = new Player({ name: playerName.name, position: playerName.position });
                 await player.save();
             } else {
                 playerIds.push(player._id);
                 await player.save();
             }
+            playerIds.push(player._id);
         };
         
         if (players.length !== 7) {
