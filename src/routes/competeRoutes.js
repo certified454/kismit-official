@@ -26,7 +26,7 @@ router.post('/register', protectRoute, async (req, res) => {
     const currentUserObjectId = req.user._id;
 
     const { targetedUserObjectId } = req.body;
-    const { description } = req.body;
+    const { description, team } = req.body;
 
     //set the current user as the creator of the compete and the targeted user as the challenged user
     if (targetedUserObjectId === currentUserObjectId.toString()) {
@@ -49,6 +49,10 @@ router.post('/register', protectRoute, async (req, res) => {
                 { creator: targetedUserObjectId, targetedUser: currentUserObjectId }
             ]
         });
+        if (team.length  === 0 ) { 
+            console.log('A team must be specified for the competition');
+            return res.status(400).json({ message: 'A team must be specified for the competition' });
+        }
         if (existingCompetition) {
             console.log('A competition between these users already exists');
             return res.status(400).json({ message: 'This competition already exists between you and the competing user' });
