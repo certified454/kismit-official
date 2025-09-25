@@ -51,13 +51,11 @@ router.post("/register", protectRoute,  async (req, res) => {
             if (!tag) {
                 tag = new Tag({name: tagName, posts: [newPost._id]})
                 await tag.save();
-                console.log(`Tag ${tagName} created and associated with post ${newPost._id}`);
             } else {
                 tag.posts.push(newPost._id);
                 await tag.save();
-                console.log(`Post ${newPost._id} associated with existing tag ${tagName}`);
             }
-        }
+        };
       
         await newPost.save()
 

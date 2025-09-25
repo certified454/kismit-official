@@ -16,28 +16,23 @@ router.post('/register', protectRoute, async (req, res) => {
             console.log('All fields are required')
             return res.status(400).json({ message: 'All fields are required' });
         }
-        // extract player names from the players array
-        const playerNames = players.map(player => player.name);
-        const existingPlayers = await Player.find({ name: { $in: playerNames }, owner: userId });
-        console.log(existingPlayers);
-        if (existingPlayers.length > 0) {
-            console.log('You already have players with these names');
-            return res.status(400).json({ message: 'You already have players with these names' });
-        }
+        // create players name if they dont exist
+        const playerIds = [];
+        for (const player of players) {
+            let player = await Player.findOne({ name: player.name, position: player.position });
+            if (!player) {
+                player = new Player({ name: player.name, position: player.position });
+                await player.save();
+            } else {
+                playerIds.push(player._id);
+                await player.save();
+            }
+        };
+        
         if (players.length !== 7) {
             console.log('You must add exactly seven players to make a team');
             return res.status(400).json({ message: 'You must add exactly seven players to make a team' });
         }
-        const playerIds = [];
-        for (const player of players) {
-            const newPlayer = new Player({
-                name: player.name,
-                position: player.position,
-                owner: userId
-            });
-            await newPlayer.save();
-            playerIds.push(newPlayer._id);
-        };
         const newTeam = new team({
             name,
             owner: userId,
