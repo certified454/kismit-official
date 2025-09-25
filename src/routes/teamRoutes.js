@@ -29,9 +29,10 @@ router.post('/register', protectRoute, async (req, res) => {
             return res.status(400).json({ message: 'You must add exactly seven players to make a team' });
         }
         const playerIds = [];
-        for (const playerName of players) {
+        for (const player of players) {
             const newPlayer = new Player({
-                name: playerName,
+                name: player.name,
+                position: player.position,
                 owner: userId
             });
             await newPlayer.save();
