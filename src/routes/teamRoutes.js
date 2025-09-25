@@ -16,8 +16,12 @@ router.post('/register', protectRoute, async (req, res) => {
             console.log('All fields are required')
             return res.status(400).json({ message: 'All fields are required' });
         }
-        const existingPlayers = await Player.find({ name: { $in: players }, owner: userId });
+        // extract player names from the players array
+        const playerNames = players.map(player => player.name);
+        const existingPlayers = await Player.find({ name: { $in: playerNames }, owner: userId });
+        console.log(existingPlayers);
         if (existingPlayers.length > 0) {
+            console.log('You already have players with these names');
             return res.status(400).json({ message: 'You already have players with these names' });
         }
         if (players.length !== 7) {
