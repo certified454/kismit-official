@@ -10,11 +10,12 @@ const router = express.Router();
 router.post('/register', protectRoute, async (req, res) => {
     const userId = req.user._id;
 
-    const { name, owner, players } = req.body;
-    if (owner !== userId.toString()) {
-        return res.status(403).json({ message: 'You can only create a team for yourself' });
-    };
+    const { name, players } = req.body;
     try {
+        if (!name || !players) {
+            console.log('All fields are required')
+            return res.status(400).json({ message: 'All fields are required' });
+        }
         const existingPlayers = await Player.find({ name: { $in: players }, owner: userId });
         if (existingPlayers.length > 0) {
             return res.status(400).json({ message: 'You already have players with these names' });
