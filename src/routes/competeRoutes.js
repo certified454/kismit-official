@@ -54,7 +54,7 @@ router.post('/register', protectRoute, async (req, res) => {
             return res.status(400).json({ message: 'This competition already exists between you and the competing user' });
         }
         if (targetUser.expoPushToken) {
-            const acceptLink = `kismit://compete/respond?challengerId=${currentUserObjectId}`;
+            const acceptLink = `${process.env.CLIENT_URL}/(respond)=${currentUserObjectId}`;
             try {
                 await fetch('https://exp.host/--/api/v2/push/send', {
                     method: 'POST',
@@ -112,6 +112,5 @@ router.post('/respond', protectRoute, async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
 
 export default router;
