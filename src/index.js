@@ -15,7 +15,7 @@ import challengeRoutes from './routes/challengeRoutes.js';
 import sportsRoutes from './routes/sportsRoutes.js';
 import voteRoutes from './routes/voteRoutes.js';
 import competeRoutes from './routes/competeRoutes.js';
-import team from "./modules/team.js";
+import teamRoutes from "./routes/teamRoutes.js";
 import { connectDB } from "./lib/db.js"
 
 const app = express();
@@ -44,7 +44,7 @@ app.use("/api/challenge", challengeRoutes);
 app.use("/api/sports", sportsRoutes);
 app.use("/api", voteRoutes);
 app.use("/api/compete", competeRoutes);
-app.use("/api/team", team);
+app.use("/api/team", teamRoutes);
 
 io.on('connection', (socket) => {
     console.log('New client connected', socket.id);
