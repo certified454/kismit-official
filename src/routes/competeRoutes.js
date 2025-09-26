@@ -26,7 +26,7 @@ router.post('/register', protectRoute, async (req, res) => {
     const currentUserObjectId = req.user._id;
 
     const { targetedUserObjectId } = req.body;
-    const { description, team } = req.body;
+    const { description, creatorTeam } = req.body;
 
     //set the current user as the creator of the compete and the targeted user as the challenged user
     if (targetedUserObjectId === currentUserObjectId.toString()) {
@@ -49,14 +49,23 @@ router.post('/register', protectRoute, async (req, res) => {
                 { creator: targetedUserObjectId, targetedUser: currentUserObjectId }
             ]
         });
-        if (team.length  === 0 ) { 
-            console.log('A team must be specified for the competition');
-            return res.status(400).json({ message: 'A team must be specified for the competition' });
-        }
+        
+        if (!creatorTeam) { 
+            console.log('Add a team for the competition');
+            return res.status(400).json({ message: 'Add a team for the competition' });
+        };
+
+        //compare the the userId in the team to the id of the creator before saving it as creatorTeam
+        if(creatorTeam && creatorTeam.userId !== currentUserObjectId.toString()) {
+            console.log('Invalid team for the competition');
+            return res.status(400).json({ message: 'Invalid team for the competition' });
+        };
+
         if (existingCompetition) {
             console.log('A competition between these users already exists');
             return res.status(400).json({ message: 'This competition already exists between you and the competing user' });
-        }
+        };
+
         if (targetUser.expoPushToken) {
             const acceptLink = `${process.env.CLIENT_URL}/(respond)=${currentUserObjectId}`;
             try {
@@ -78,7 +87,17 @@ router.post('/register', protectRoute, async (req, res) => {
             } catch (error) {
                 console.error('Error sending push notification:', error);
             }
-        } 
+        };
+        const newCompete = new Compete({
+            creator: currentUserObjectId,
+            targetedUser: targetedUserObjectId,
+            description,
+            status: 'pending',
+            creatorTeam
+        })
+        await newCompete.save();
+        console.log('Competition created successfully:', newCompete);
+
         res.status(200).json({ message: 'Challenge sent. Awaiting response.' });
     } catch (error) {
         console.error('Error creating compete:', error);

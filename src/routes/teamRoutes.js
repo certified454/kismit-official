@@ -48,4 +48,22 @@ router.post('/register', protectRoute, async (req, res) => {
     }
 })
 
+//get a user's teams
+router.get('/:teamId', protectRoute, async (req, res) => {
+    const teamId = req.params.teamId;
+    try {
+        const userTeam = await team.findById(teamId)
+        .populate('players', 'name position');
+
+        if (!userTeam) {
+            console.log('Team not found');
+            return res.status(404).json({ message: 'Team not found' });
+        };
+        res.send({ userTeam, message: 'Team found' });
+    } catch (error) {
+        console.log('internal server error');
+        res.status(500).json({message: 'internal server error', error: error.message});
+    }
+})
+
 export default router;

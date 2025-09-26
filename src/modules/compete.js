@@ -18,14 +18,14 @@ const competeSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    team: {
+    creatorTeam: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Team"
     },
-    teamsCount: [{
-        type: Number,
-        default: 0
-    }],
+    targetTeam: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Team"
+    },
     creator: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
