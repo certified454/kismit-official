@@ -57,12 +57,11 @@ router.post('/register', protectRoute, async (req, res) => {
         };
 
         //check which team the creator chose and set it as the competition team
-        const competitonTeam = await Team.find({ _id: { $in: creatorTeam } });
+        const competitonTeam = await Team.findById(creatorTeam);
         if (!competitonTeam || competitonTeam.owner.toString() !== currentUserObjectId.toString()) {
             console.log('Invalid team for the competition');
             return res.status(400).json({ message: 'Invalid team for the competition' });
         }
-
         if (existingCompetition) {
             console.log('A competition between these users already exists');
             return res.status(400).json({ message: 'This competition already exists between you and the competing user' });
