@@ -53,6 +53,7 @@ router.get('/', protectRoute, async (req, res) => {
     const userId = req.user._id;
     try {
         const userTeam = await team.findOne({ owner: userId })
+        .sort({createdAt: -1})
         .populate('players', 'name position');
 
         if (!userTeam) {
