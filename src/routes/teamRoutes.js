@@ -48,11 +48,11 @@ router.post('/register', protectRoute, async (req, res) => {
     }
 })
 
-//get a user's teams
-router.get('/:teamId', protectRoute, async (req, res) => {
-    const teamId = req.params.teamId;
+//get the team created a set it for the challange creation
+router.get('/', protectRoute, async (req, res) => {
+    const userId = req.user._id;
     try {
-        const userTeam = await team.findById(teamId)
+        const userTeam = await team.findOne({ owner: userId })
         .populate('players', 'name position');
 
         if (!userTeam) {
