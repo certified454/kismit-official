@@ -68,7 +68,7 @@ router.post('/register', protectRoute, async (req, res) => {
         };
 
         if (targetUser.expoPushToken) {
-            const acceptLink = `${process.env.CLIENT_URL}/(respond)=${currentUserObjectId}`;
+            const acceptLink = `ksm://(respond)/${currentUserObjectId}`;
             try {
                 await fetch('https://exp.host/--/api/v2/push/send', {
                     method: 'POST',
@@ -77,10 +77,9 @@ router.post('/register', protectRoute, async (req, res) => {
                         to: targetUser.expoPushToken,
                         title: 'New challenge for you!',
                         image: creator.profilePicture,
-                        body: `🔥 ${creator.username} has challenged you to a competition! go to the app to Accept or decline their request. ${acceptLink}`,
+                        body: `🔥 ${creator.username} has challenged you to a competition! go to the app to Accept or decline their request.`,
                         data: {
-                            challengerId: currentUserObjectId,
-                            description
+                            url: acceptLink
                         },
                         badge: 1
                     })
