@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import express, { request } from "express";
-import team from "../modules/team.js";
+import Team from "../modules/team.js";
 import Player from "../modules/player.js";
 import protectRoute from "../middleware/auth.middleware.js";
 
@@ -34,7 +34,7 @@ router.post('/register', protectRoute, async (req, res) => {
             console.log('You must add exactly seven players to make a team');
             return res.status(400).json({ message: 'You must add exactly seven players to make a team' });
         }
-        const newTeam = new team({
+        const newTeam = new Team({
             name,
             owner: userId,
             players: playerIds
@@ -52,7 +52,7 @@ router.post('/register', protectRoute, async (req, res) => {
 router.get('/', protectRoute, async (req, res) => {
     const userId = req.user._id;
     try {
-        const userTeam = await team.findOne({ owner: userId })
+        const userTeam = await Team.findOne({ owner: userId })
         .sort({createdAt: -1})
         .populate('players', 'name position');
 
