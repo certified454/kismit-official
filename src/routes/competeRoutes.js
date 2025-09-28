@@ -2,6 +2,7 @@ import express from 'express';
 import protectRoute from '../middleware/auth.middleware.js';
 import Compete from '../modules/compete.js';
 import User from '../modules/user.js';
+import Team from '../modules/team.js';
 
 const router = express.Router();
 
@@ -55,11 +56,12 @@ router.post('/register', protectRoute, async (req, res) => {
             return res.status(400).json({ message: 'Add a team for the competition' });
         };
 
-        //compare the the userId in the team to the id of the creator before saving it as creatorTeam
-        if(creatorTeam && creatorTeam.userId !== currentUserObjectId.toString()) {
+        //check which team the creator chose and set it as the competition team
+        const competitonTeam = await Team.find({ _id: { $in: creatorTeam } });
+        if (!competitonTeam || competitonTeam.owner.toString() !== currentUserObjectId.toString()) {
             console.log('Invalid team for the competition');
             return res.status(400).json({ message: 'Invalid team for the competition' });
-        };
+        }
 
         if (existingCompetition) {
             console.log('A competition between these users already exists');
