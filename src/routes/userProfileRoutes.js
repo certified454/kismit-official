@@ -32,7 +32,7 @@ router.put('/:userId', protectRoute, async (req, res) => {
     const {username, email, profilePicture, bio, fullName, location, gender, hobbies, phone} = req.body;
 
     try {
-         const user = await User.findById(userId).select('-password -verificationCode -verificationCodeExpires -dateOfBirth -editProfile');
+        const user = await User.findById(userId).select('-password -verificationCode -verificationCodeExpires -dateOfBirth -editProfile');
         if (!user) {
             return res.status(404).json({message: 'User not found'})
         }
@@ -300,5 +300,4 @@ router.get('/:userId/following', protectRoute, async (req, res) => {
         res.status(500).json({ message: 'Internal server error', success: false });
     }
 });
-
 export default router;

@@ -3,6 +3,7 @@ import protectRoute from '../middleware/auth.middleware.js';
 import Compete from '../modules/compete.js';
 import User from '../modules/user.js';
 import Team from '../modules/team.js';
+import { request } from 'http';
 
 const router = express.Router();
 
@@ -105,33 +106,57 @@ router.post('/register', protectRoute, async (req, res) => {
     }
 });
 
-router.post('/respond', protectRoute, async (req, res) => {
-    const targetedUserId = req.user._id;
-    const { challengerId, description, accepted, team } = req.body;
-
-    if (!accepted) {
-        return res.status(200).json({ message: 'Challenge declined.' });
-    }
-
+router.get('/:id', protectRoute, async (req, res) => {
+    const competeId = req.params.id;
     try {
-        const creator = await User.findById(challengerId);
-        const targetUser = await User.findById(targetedUserId);
-
-        if (!creator || !targetUser) {
-            return res.status(404).json({ message: 'User not found' });
+        const competition = await Compete.findById(competeId)
+        .populate('creator', 'username profilePicture')
+        .populate('targetedUser', 'username profilePicture')
+        .populate('creatorTeam')
+        .populate('targetTeam');
+        if (!competition) {
+            console.log('Competition not found');
+            return res.status(404).json({ message: 'Competition not found' });
         }
-        const newCompete = new Compete({
-            creator: challengerId,
-            targetedUser: targetedUserId,
-            description: description || `Compete between ${creator.userdescription} and ${targetUser.userdescription}`,
-            status: 'accepted',
-            team
-        });
-
-        await newCompete.save();
-        res.status(201).json({ message: 'Compete accepted and created.', compete: newCompete });
-
+        console.log('Competition found:', competition);
+        res.status(200).json({ competition });
     } catch (error) {
+        console.error('Error fetching competition:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.put('/respond', protectRoute, async (req, res) => {
+    const targetedUserId = req.user._id;
+    const competeId = req.body.competeId;
+    const { status, targetTeam } = req.body;
+    try {
+        const competition = await Compete.findById(competeId);
+        if (!competition) {
+            console.log('Competition not found');
+            return res.status(404).json({ message: 'Competition not found' });
+        };
+        // check if the user responding to the compete is the targeted user
+        if (targetedUserId !== competition.targetedUser.toString()) {
+            console.log('You are not authorized to respond to this competition');
+            return res.status(403).json({ message: 'You are not authorized to respond to this competition' });
+        };
+        if (competition.status !== 'pending') {
+            console.log('This competition has already been responded to');
+            return res.status(400).json({ message: 'This competition has already been responded to' });
+        };
+       
+        if (!targetTeam) {
+            console.log('Add a team to accept the competiton');
+            return res.status(400).json({message: 'Add a team to accept the competiton' });
+        }
+
+        competition.status = status && 'accepted' || 'pending';
+        competition.targetTeam = targetTeam;
+        await competition.save();
+        res.status(200).json({ message: `Competition ${status}` });
+    } catch (error) {
+        console.error('Error responding to compete:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
