@@ -106,8 +106,8 @@ router.post('/register', protectRoute, async (req, res) => {
     }
 });
 
-router.get('/:id', protectRoute, async (req, res) => {
-    const competeId = req.params.id;
+router.get('/:competeId', protectRoute, async (req, res) => {
+    const competeId = req.params.competeId;
     try {
         const competition = await Compete.findById(competeId)
         .populate('creator', 'username profilePicture')
@@ -126,9 +126,9 @@ router.get('/:id', protectRoute, async (req, res) => {
     }
 });
 
-router.put('/:id/respond', protectRoute, async (req, res) => {
+router.put('/:competeId/respond', protectRoute, async (req, res) => {
     const targetedUserId = req.user._id;
-    const competeId = req.body.competeId;
+    const competeId = req.params.competeId;
     const { status, targetTeam } = req.body;
     try {
         const competition = await Compete.findById(competeId);
