@@ -126,7 +126,7 @@ router.get('/:id', protectRoute, async (req, res) => {
     }
 });
 
-router.put('/respond', protectRoute, async (req, res) => {
+router.put('/:id/respond', protectRoute, async (req, res) => {
     const targetedUserId = req.user._id;
     const competeId = req.body.competeId;
     const { status, targetTeam } = req.body;
