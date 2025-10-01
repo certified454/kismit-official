@@ -68,8 +68,17 @@ router.post('/register', protectRoute, async (req, res) => {
             return res.status(400).json({ message: 'This competition already exists between you and the competing user' });
         };
 
+        const newCompete = new Compete({
+            creator: currentUserObjectId,
+            targetedUser: targetedUserObjectId,
+            description,
+            status: 'pending',
+            creatorTeam
+        })
+        await newCompete.save();
+        
         if (targetUser.expoPushToken) {
-            const acceptLink = `ksm://(respond)/${currentUserObjectId}`;
+            const acceptLink = `ksm://(respond)/${newCompete._id}`;
             try {
                 await fetch('https://exp.host/--/api/v2/push/send', {
                     method: 'POST',
@@ -89,14 +98,7 @@ router.post('/register', protectRoute, async (req, res) => {
                 console.error('Error sending push notification:', error);
             }
         };
-        const newCompete = new Compete({
-            creator: currentUserObjectId,
-            targetedUser: targetedUserObjectId,
-            description,
-            status: 'pending',
-            creatorTeam
-        })
-        await newCompete.save();
+        
         console.log('Competition created successfully:', newCompete);
 
         res.status(200).json({ message: 'Challenge sent. Awaiting response.' });
