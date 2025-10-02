@@ -57,16 +57,16 @@ router.post('/register', protectRoute, async (req, res) => {
             return res.status(400).json({ message: 'Add a team for the competition' });
         };
 
-        //check which team the creator chose and set it as the competition team
+        //check which team the creator choose and set it as the competition team
         const competitonTeam = await Team.findById(creatorTeam);
         if (!competitonTeam || competitonTeam.owner.toString() !== currentUserObjectId.toString()) {
             console.log('Invalid team for the competition');
             return res.status(400).json({ message: 'Invalid team for the competition' });
         }
-        if (existingCompetition) {
-            console.log('A competition between these users already exists');
-            return res.status(400).json({ message: 'This competition already exists between you and the competing user' });
-        };
+        // if (existingCompetition) {
+        //     console.log('A competition between these users already exists');
+        //     return res.status(400).json({ message: 'This competition already exists between you and the competing user' });
+        // };
 
         const newCompete = new Compete({
             creator: currentUserObjectId,
@@ -78,7 +78,7 @@ router.post('/register', protectRoute, async (req, res) => {
         await newCompete.save();
         
         if (targetUser.expoPushToken) {
-            const acceptLink = `ksm://(respond)/${newCompete._id}`;
+            const acceptLink = `ksm://(challenge)/create-target-team`;
             try {
                 await fetch('https://exp.host/--/api/v2/push/send', {
                     method: 'POST',
