@@ -63,11 +63,30 @@ router.post('/register', protectRoute, async (req, res) => {
             console.log('Invalid team for the competition');
             return res.status(400).json({ message: 'Invalid team for the competition' });
         }
-        // if (existingCompetition) {
-        //     console.log('A competition between these users already exists');
-        //     return res.status(400).json({ message: 'This competition already exists between you and the competing user' });
-        // };
-
+        if (existingCompetition) {
+            // send a new notification to the targeted user and remaind them of the existing competition
+            if (targetUser.expoPushToken) {
+                const acceptLink = `ksm://(challenge)/create-target-team?competeId=${existingCompetition._id}`;
+                try {
+                    await fetch('https://exp.host/--/api/v2/push/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            to: targetUser.expoPushToken,
+                            title: 'New challenge for you!',
+                            image: creator.profilePicture,
+                            body: `🔥 ${creator.username} has challenged you to a competition! go to the app to Accept or decline their request.`,
+                            data: {
+                                url: acceptLink
+                            },
+                            badge: 1
+                        })
+                    });
+                } catch (error) {
+                    console.error('Error sending push notification:', error);
+                }
+            }
+        }
         const newCompete = new Compete({
             creator: currentUserObjectId,
             targetedUser: targetedUserObjectId,
