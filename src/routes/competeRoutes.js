@@ -148,8 +148,8 @@ router.get('/:competeId', protectRoute, async (req, res) => {
 });
 
 router.put('/:competeId/respond', protectRoute, async (req, res) => {
-    const targetedUserId = req.user._id;
     const competeId = req.params.competeId;
+    const userId = req.user._id;
     const { status, targetTeam } = req.body;
     try {
         const competition = await Compete.findById(competeId);
@@ -158,10 +158,10 @@ router.put('/:competeId/respond', protectRoute, async (req, res) => {
             return res.status(404).json({ message: 'Competition not found' });
         };
         // check if the user responding to the compete is the targeted user
-        if (targetedUserId !== competition.targetedUser._id.toString()) {
+        if (competition.targetedUser.toString() !== userId.toString()) {
             console.log('You are not authorized to respond to this competition');
             return res.status(403).json({ message: 'You are not authorized to respond to this competition' });
-        };
+        }
         if (competition.status !== 'pending') {
             console.log('This competition has already been responded to');
             return res.status(400).json({ message: 'This competition has already been responded to' });
