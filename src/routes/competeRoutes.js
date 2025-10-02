@@ -158,7 +158,7 @@ router.put('/:competeId/respond', protectRoute, async (req, res) => {
             return res.status(404).json({ message: 'Competition not found' });
         };
         // check if the user responding to the compete is the targeted user
-        if (targetedUserId !== competition.targetedUser.toString()) {
+        if (targetedUserId !== competition.targetedUser._id.toString()) {
             console.log('You are not authorized to respond to this competition');
             return res.status(403).json({ message: 'You are not authorized to respond to this competition' });
         };
