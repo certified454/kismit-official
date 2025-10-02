@@ -78,7 +78,7 @@ router.post('/register', protectRoute, async (req, res) => {
         await newCompete.save();
         
         if (targetUser.expoPushToken) {
-            const acceptLink = `ksm://(challenge)/create-target-team?=${newCompete._id}`;
+            const acceptLink = `ksm://(challenge)/create-target-team?competeId=${newCompete._id}`;
             try {
                 await fetch('https://exp.host/--/api/v2/push/send', {
                     method: 'POST',
