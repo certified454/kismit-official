@@ -2,13 +2,13 @@ import express from 'express';
 import protectRoute from '../middleware/auth.middleware.js';
 import ownerOnly from '../middleware/owner.middleware.js';
 import Match from "../modules/match.js";
-import cloudinary from "../lib/cloudinary.js";
+import cloudinary from "../modules/match.jsry.js";
 
 const router = express.Router();
 
 // Register a new match
 router.post('/register', protectRoute, ownerOnly, async (req, res) => {
-    const { leagueName, matchDate, time, location, homeTeamName, awayTeamName, homeTeamLogo, awayTeamLogo } = re.body;
+    const { leagueName, matchDate, time, location, homeTeamName, awayTeamName, homeTeamLogo, awayTeamLogo } = req.body;
     try {
         if (!leagueName || !matchDate || !time || !homeTeamName || !awayTeamName || !homeTeamLogo || !awayTeamLogo) {
             console.log('all fields are required');
