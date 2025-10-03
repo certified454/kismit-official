@@ -35,21 +35,21 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
         await newChallenge.save();
 
         const populatedChallenge = await Challenge.findById(newChallenge._id).populate('user', 'username profilePicture');
-                req.app.get('io').emit('new challenge created', {
-                    _id: populatedChallenge._id,
-                    user: {
-                        id: populatedChallenge.user._id,
-                        username: populatedChallenge.user.username,
-                        profilePicture: populatedChallenge.user.profilePicture
-                    },
-                    title: populatedChallenge.title,
-                    description: populatedChallenge.description,
-                    time: populatedChallenge.time,
-                    pools: populatedChallenge.pools,
-                    startDate: populatedChallenge.startDate,
-                    endDate: populatedChallenge.endDate,
-                    createdBy: populatedChallenge.createdBy
-                })
+        req.app.get('io').emit('new challenge created', {
+            _id: populatedChallenge._id,
+            user: {
+                id: populatedChallenge.user._id,
+                username: populatedChallenge.user.username,
+                profilePicture: populatedChallenge.user.profilePicture
+            },
+            title: populatedChallenge.title,
+            description: populatedChallenge.description,
+            time: populatedChallenge.time,
+            pools: populatedChallenge.pools,
+            startDate: populatedChallenge.startDate,
+            endDate: populatedChallenge.endDate,
+            createdBy: populatedChallenge.createdBy
+        })
         res.status(201).json({ message: "Challenge created successfully", populatedChallenge, newChallenge });
     } catch (error) {
         console.error(error);
