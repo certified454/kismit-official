@@ -14,19 +14,12 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
             console.log('all fields are required');
             return res.status(400).json({ message: 'All fields are required' });
         };
-        // save match images to clodinary
-        if (homeTeamLogo && awayTeamLogo) {
-            const uploadHomeTeamLogo = await cloudinary.uploader.upload(homeTeamLogo, { folder: 'matchLogos' });
-            const uploadAwayTeamLogo = await cloudinary.uploader.upload(awayTeamLogo, { folder: 'matchLogos' });
-            if (uploadHomeTeamLogo && uploadAwayTeamLogo) {
-                console.log('Images uploaded to Cloudinary');
-                homeTeamLogo = uploadHomeTeamLogo.secure_url;
-                awayTeamLogo = uploadAwayTeamLogo.secure_url;
-            } else {
-                console.log('Error uploading images to Cloudinary');
-                return res.status(500).json({ message: 'Error uploading images' });
-            };
-        };
+        // upload homeTeamLogo to cloudinary
+        const uploadHomeTeamLogoResponse = await cloudinary.uploader.upload(homeTeamLogo);
+        const homeTeamLogoUrl = uploadHomeTeamLogoResponse.secure_url;
+        // upload awayTeamLogo to cloudinary
+        const uploadAwayTeamLogoResponse = await cloudinary.uploader.upload(awayTeamLogo);
+        const awayTeamLogoUrl = uploadAwayTeamLogoResponse.secure_url;
         const newMatch = new Match({
             leagueName,
             matchDate,
@@ -34,8 +27,8 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
             location,
             homeTeamName,
             awayTeamName,
-            homeTeamLogo,
-            awayTeamLogo,
+            homeTeamLogo: homeTeamLogoUrl,
+            awayTeamLogo: awayTeamLogoUrl
         });
         await newMatch.save();
         console.log('Match registered successfully', newMatch);
