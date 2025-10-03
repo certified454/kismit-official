@@ -7,7 +7,7 @@ import cloudinary from "../lib/cloudinary.js";
 const router = express.Router();
 
 // Register a new match
-router.post('/register', protectRoute, ownerOnly, async (res, res) => {
+router.post('/register', protectRoute, ownerOnly, async (req, res) => {
     const { leagueName, matchDate, time, location, homeTeamName, awayTeamName, homeTeamLogo, awayTeamLogo } = re.body;
     try {
         if (!leagueName || !matchDate || !time || !homeTeamName || !awayTeamName || !homeTeamLogo || !awayTeamLogo) {
