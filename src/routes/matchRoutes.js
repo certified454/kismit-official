@@ -2,7 +2,7 @@ import express from 'express';
 import protectRoute from '../middleware/auth.middleware.js';
 import ownerOnly from '../middleware/owner.middleware.js';
 import Match from "../modules/match.js";
-import cloudinary from "../modules/match.jsry.js";
+import cloudinary from '../lib/cloudinary.js';
 
 const router = express.Router();
 
