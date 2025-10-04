@@ -54,4 +54,44 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
     }
 })
 
+router.get('/', protectRoute, async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    try {
+        const matches = await Match.aggregate([
+            {
+                $sort: { createdAt: -1 }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
+            },
+            {
+                $project: {
+                    leagueName: 1,
+                    matchDate: 1,
+                    time: 1,
+                    location: 1,
+                    homeTeamName: 1,
+                    awayTeamName: 1,
+                    homeTeamLogo: 1,
+                    awayTeamLogo: 1
+                }
+            }
+        ])
+        const totalMatches = await Match.countDocuments();
+        res.status(200).json({
+            matches,
+            totalPages: Math.ceil(totalMatches / limit),
+            currentPage: page
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+})
 export default router;
