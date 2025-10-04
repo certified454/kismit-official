@@ -33,7 +33,7 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
         await newMatch.save();
         console.log('Match registered successfully', newMatch);
 
-        req.io.emit('new match created', {
+        req.app.get('io').emit('new match created', {
             _id: newMatch._id,
             leagueName: newMatch.leagueName,
             matchDate: newMatch.matchDate,
