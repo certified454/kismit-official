@@ -69,7 +69,7 @@ router.post("/register", protectRoute,  async (req, res) => {
             },
             caption: populatedPost.caption,
             image: populatedPost.image,
-            tag: populatedPost.tag,
+            tags: populatedPost.tag,
             mentions: populatedPost.mentions,
             music: populatedPost.music,
             commentsCount: populatedPost.commentsCount,

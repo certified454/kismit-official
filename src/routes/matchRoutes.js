@@ -84,6 +84,7 @@ router.get('/', protectRoute, async (req, res) => {
             }
         ])
         const totalMatches = await Match.countDocuments();
+        console.table(matches);
         res.status(200).json({
             matches,
             totalPages: Math.ceil(totalMatches / limit),
