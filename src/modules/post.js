@@ -31,10 +31,10 @@ const postSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    tag: {
+    tags: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tag'
-    },
+    }],
     mentions: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

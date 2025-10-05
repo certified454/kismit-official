@@ -21,6 +21,7 @@ router.post("/register", protectRoute,  async (req, res) => {
         const extractedMentions  = caption.match(mentionRegrex);
 
         const tags = extractedTags ? extractedTags.map(tag => tag.substring(1)) : [];
+        console.log("Extracted tags:", tags, "from caption:", caption);
         const mentions = extractedMentions ? extractedMentions.map(mention => mention.substring(1)) : [];
 
         if ( !caption || !image ) {
@@ -36,26 +37,28 @@ router.post("/register", protectRoute,  async (req, res) => {
                 mentionedUserIds.push(user._id);
             }
         };
-
+        const tagId = [];
+        for (const tagName of tags) {
+            let tag = await Tag.findOne({name: tagName});
+            if (!tag) {
+                tag = new Tag({name: tagName, posts: []})
+                await tag.save();
+            }
+            tagId.push(tag._d);
+        };
         const newPost = new Post({
             caption,
             image: imageUrl,
             user: req.user._id,
-            tags,
+            tags: tagId,
             mentions: mentionedUserIds,
             music
         })
-        // create tag documents if they don't exist
-        for (const tagName of tags) {
-            let tag = await Tag.findOne({name: tagName});
-            if (!tag) {
-                tag = new Tag({name: tagName, posts: [newPost._id]})
-                await tag.save();
-            } else {
-                tag.posts.push(newPost._id);
-                await tag.save();
-            }
-        };
+        for (const tagId of tagId) {
+            await Tag.findByIdAndUpdate(tagId, { $addToSet: { post: newPost._id } });
+        }
+        console.log("Saved post tags:", newPost.tags);
+        
       
         await newPost.save()
 
@@ -122,7 +125,7 @@ router.get("/", protectRoute, async (req, res) => {
                 $lookup: {
                     from: 'tags',
                     localField: 'tags',
-                    foreignField: 'name',
+                    foreignField: '_id',
                     as: 'tags'
                 }
             },
@@ -229,17 +232,20 @@ router.put('/:postId', protectRoute, async (req, res) => {
       
         post.mentions = mentionedUserIds.length > 0 ? mentionedUserIds : [];
         // create tag documents if they don't exist
+        const tagId = [];
         for (const tagName of tags) {
             let tag = await Tag.findOne({name: tagName})
             if(!tag) {
                 tag = new Tag({name: tagName, posts: [postId] })
                 await tag.save()
-            } else if (!tag.posts.includes(postId)) {
-                tag.posts.push(postId)
-                await tag.save()
             }
+            tagId.push(tag._id) ;
         };
-        post.tags = tags;
+        for (const tagId of tagId) {
+            await Tag.findByIdAndUpdate(tagId, { $addToSet: { post: newPost._id } });
+        }
+        console.log("Saved post tags:", newPost.tags);
+        post.tag = tags;
         await post.save();
         req.app.get('io').emit('editedPost', {postId, updatedFields: {caption, tags, mentions: post.mentions}});
         res.status(200).json({message: 'Post updated successfully', post});
