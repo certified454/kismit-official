@@ -57,10 +57,17 @@ router.post("/register", protectRoute,  async (req, res) => {
         for (const tagId of tagId) {
             await Tag.findByIdAndUpdate(tagId, { $addToSet: { post: newPost._id } });
         }
+        await post.save();
+        for (const tagIds of tagId) {
+            await Tag.findByIdAndUpdate(tagIds, { $addToSet: { posts: newPost._id } });
+        }
+
+        const populatedPost = await Post.findById(newPost._id)
+            .populate('user', 'username profilePicture')
+            .populate('tags', 'name')
+            .populate('mentions', 'username profilePicture');
+
         console.log("Saved post tags:", newPost.tags);
-        
-      
-        await newPost.save()
 
         const populatedPost = await Post.findById(newPost._id).populate('user', 'username profilePicture');
         req.app.get('io').emit('new post created', {
@@ -241,12 +248,18 @@ router.put('/:postId', protectRoute, async (req, res) => {
             }
             tagId.push(tag._id) ;
         };
-        for (const tagId of tagId) {
-            await Tag.findByIdAndUpdate(tagId, { $addToSet: { post: newPost._id } });
+        await post.save();
+        for (const tagIds of tagId) {
+            await Tag.findByIdAndUpdate(tagIds, { $addToSet: { posts: newPost._id } });
         }
+
+        const populatedPost = await Post.findById(newPost._id)
+            .populate('user', 'username profilePicture')
+            .populate('tags', 'name')
+            .populate('mentions', 'username profilePicture');
         console.log("Saved post tags:", newPost.tags);
         post.tag = tags;
-        await post.save();
+        
         req.app.get('io').emit('editedPost', {postId, updatedFields: {caption, tags, mentions: post.mentions}});
         res.status(200).json({message: 'Post updated successfully', post});
     } catch (error) {
