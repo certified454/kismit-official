@@ -261,7 +261,6 @@ router.delete("/:id", protectRoute, async (req, res) => {
         }
 
         await post.deleteOne();
-        await post.save();
         res.json({ message: "Post deleyed Successfully" })
         
     } catch (error) {
