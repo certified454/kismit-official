@@ -54,13 +54,10 @@ router.post("/register", protectRoute,  async (req, res) => {
             mentions: mentionedUserIds,
             music
         })
-        for (const tagId of tagId) {
-            await Tag.findByIdAndUpdate(tagId, { $addToSet: { post: newPost._id } });
-        }
-        await newPost.save();
         for (const tagIds of tagId) {
             await Tag.findByIdAndUpdate(tagIds, { $addToSet: { posts: newPost._id } });
         }
+        await newPost.save();
 
         const populatedPost = await Post.findById(newPost._id)
             .populate('user', 'username profilePicture')
