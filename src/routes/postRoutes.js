@@ -44,7 +44,7 @@ router.post("/register", protectRoute,  async (req, res) => {
                 tag = new Tag({name: tagName, posts: []})
                 await tag.save();
             }
-            tagId.push(tag._d);
+            tagId.push(tag._id);
         };
         const newPost = new Post({
             caption,
@@ -244,14 +244,11 @@ router.put('/:postId', protectRoute, async (req, res) => {
                 tag = new Tag({name: tagName, posts: [postId] })
                 await tag.save()
             }
-            tagId.push(tag._id) ;
-        };
-        await post.save();
-        for (const tagIds of tagId) {
-            await Tag.findByIdAndUpdate(tagIds, { $addToSet: { posts: newPost._id } });
+            tagId.push(tag._id);
+            await Tag.findByIdAndUpdate(tag._id, { $addToSet: {posts: postId} });
         };
 
-        post.tags = tags;
+        post.tags = tagId;
         
         req.app.get('io').emit('editedPost', {postId, updatedFields: {caption, tags, mentions: post.mentions}});
         res.status(200).json({message: 'Post updated successfully', post});
