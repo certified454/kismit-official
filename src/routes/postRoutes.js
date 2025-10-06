@@ -246,9 +246,10 @@ router.put('/:postId', protectRoute, async (req, res) => {
         };
 
         post.tags = tagId;
-        
+
         req.app.get('io').emit('editedPost', {postId, updatedFields: {caption, tags, mentions: post.mentions}});
         res.status(200).json({message: 'Post updated successfully', post});
+        console.log("Updated post tags:", post.tags);
     } catch (error) {
         console.error(error, "error updating post");
         res.status(500).json({ message: "error updating post" });
