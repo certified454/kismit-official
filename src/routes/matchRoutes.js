@@ -31,7 +31,6 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
             awayTeamLogo: awayTeamLogoUrl
         });
         await newMatch.save();
-        console.log('Match registered successfully', newMatch);
 
         req.app.get('io').emit('new match created', {
             _id: newMatch._id,
@@ -84,7 +83,7 @@ router.get('/', protectRoute, async (req, res) => {
             }
         ])
         const totalMatches = await Match.countDocuments();
-        console.table(matches);
+        
         res.status(200).json({
             matches,
             totalPages: Math.ceil(totalMatches / limit),

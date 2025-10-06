@@ -233,7 +233,7 @@ router.put('/:postId', protectRoute, async (req, res) => {
         };
       
         post.mentions = mentionedUserIds.length > 0 ? mentionedUserIds : [];
-        // create tag documents if they don't exist
+
         const tagId = [];
         for (const tagName of tags) {
             let tag = await Tag.findOne({name: tagName})
@@ -246,10 +246,10 @@ router.put('/:postId', protectRoute, async (req, res) => {
         };
 
         post.tags = tagId;
+        await post.save();
 
         req.app.get('io').emit('editedPost', {postId, updatedFields: {caption, tags, mentions: post.mentions}});
         res.status(200).json({message: 'Post updated successfully', post});
-        console.log("Updated post tags:", post.tags);
     } catch (error) {
         console.error(error, "error updating post");
         res.status(500).json({ message: "error updating post" });
