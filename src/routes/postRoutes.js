@@ -57,7 +57,7 @@ router.post("/register", protectRoute,  async (req, res) => {
         for (const tagId of tagId) {
             await Tag.findByIdAndUpdate(tagId, { $addToSet: { post: newPost._id } });
         }
-        await post.save();
+        await newPost.save();
         for (const tagIds of tagId) {
             await Tag.findByIdAndUpdate(tagIds, { $addToSet: { posts: newPost._id } });
         }
@@ -68,8 +68,6 @@ router.post("/register", protectRoute,  async (req, res) => {
             .populate('mentions', 'username profilePicture');
 
         console.log("Saved post tags:", newPost.tags);
-
-        const populatedPost = await Post.findById(newPost._id).populate('user', 'username profilePicture');
         req.app.get('io').emit('new post created', {
             _id: populatedPost._id,
             user: {
