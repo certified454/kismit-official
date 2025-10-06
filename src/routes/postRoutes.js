@@ -249,14 +249,9 @@ router.put('/:postId', protectRoute, async (req, res) => {
         await post.save();
         for (const tagIds of tagId) {
             await Tag.findByIdAndUpdate(tagIds, { $addToSet: { posts: newPost._id } });
-        }
+        };
 
-        const populatedPost = await Post.findById(newPost._id)
-            .populate('user', 'username profilePicture')
-            .populate('tags', 'name')
-            .populate('mentions', 'username profilePicture');
-        console.log("Saved post tags:", newPost.tags);
-        post.tag = tags;
+        post.tags = tags;
         
         req.app.get('io').emit('editedPost', {postId, updatedFields: {caption, tags, mentions: post.mentions}});
         res.status(200).json({message: 'Post updated successfully', post});
