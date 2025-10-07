@@ -47,11 +47,6 @@ router.post("/register", async (req, res) => {
     if (existsingUser)
       return res.status(400).json({ message: "User already exists" });
 
-    //check if email already exists
-    const emailEmail = await User.findOne({ email });
-    if (emailEmail)
-      return res.status(400).json({ message: "User already exists" });
-
     let profilePictureUrl = "";
     if (profilePicture) {
         try {
@@ -59,7 +54,7 @@ router.post("/register", async (req, res) => {
           profilePictureUrl = uploadResp.secure_url;  
           console.log("Profile uploaded to cloudinary", profilePictureUrl)  
           } catch (error) {
-            console.log("Clodinary upload error", uploadResp);
+            console.log("Clodinary upload error", error);
             return res.status(500).json({message: "Failed to upload profile to cloudinary"})
           }
    }  else {
@@ -104,7 +99,7 @@ router.post("/register", async (req, res) => {
       to: email,
       subject: "Email Verification",
       html: `
-                <Doctype html>
+                <!DOCTYPE html>
                 <html>
                 <head>
                     <meta charset="UTF-8">
