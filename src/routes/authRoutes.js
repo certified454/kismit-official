@@ -1,6 +1,5 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-// import nodemailer from "nodemailer";
 import sgMail from "@sendgrid/mail";
 import "dotenv/config";
 
@@ -9,7 +8,7 @@ import cloudinary from "../lib/cloudinary.js";
 
 const router = express.Router();
 
-sgMail.setApiKey(process.env.EMAIL_PASSWORD);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const generateToken = (userId, isOwner) => {
   return jwt.sign({ userId, isOwner }, process.env.JWT_SECRET, { expiresIn: "15d" });
@@ -175,10 +174,10 @@ router.post("/register", async (req, res) => {
                 </html>
        `,
     }
-    console.log("SendGrid message object", msg);
+  
     await sgMail.send(msg);
     console.log("Verification email sent to ", email);
-    
+
     res.status(201).json({ 
       message: `User registered successfully. A verification code has been sent to ${email}. Please check your email for the code.`,
       user: {
@@ -286,28 +285,12 @@ router.post("/resend-code", async (req, res) => {
 
     user.verificationCode = newVerificationCode;
     user.verificationCodeExpires = newVerificationCodeExpires;
-    await user.save();
-    res.status(200).json({
-      message: `A new verification code has been sent to ${email}. Please check your email for the code.`,
-    });
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      // port: 465,
-      // secure: true,
-      // host: "smtp.gmail.com",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-
-    const mailOptions = {
-      from: process.env.EMAIL,
+    const msg = {
       to: email,
+      from: process.env.EMAIL,
       subject: "Email Verification",
       html: `
-                <Doctype html>
+                <!DOCTYPE html>
                 <html>
                 <head>
                     <meta charset="UTF-8">
@@ -317,7 +300,7 @@ router.post("/resend-code", async (req, res) => {
                         body {
                             font-family: Arial, sans-serif;
                             background-color: #ffffff;
-                            color: #000000;
+                            color: #000;
                             margin: 0;
                             padding: 20px;
                             line-height: 1.6;
@@ -326,7 +309,7 @@ router.post("/resend-code", async (req, res) => {
                             max-width: 600px;
                             margin: 0 auto;
                             padding: 30px;
-                            background-color: #f5f5f5;
+                            background-color: #f5f5f580;
                             border-radius: 5px;
                         }
                         .footer {
@@ -369,34 +352,33 @@ router.post("/resend-code", async (req, res) => {
                 </head>
                 <body>
                     <div class="container">
+                        <h1>New Account Registration</h1>
                         <img src="https://github.com/certified454/My-portfolio/blob/326ea0bcae6116cb6b6058825fe4df08f3bec7c1/adaptive-icon.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
-                        <h1>Verify Your Email</h1>
-                        <p>Hi ${user.username},</p>
-                        <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this four digit code bellow:</p>
-                        <h2>${newVerificationCode}</h2>
-                        <p>This link will expire in 15 minutes.</p>
+                        <p>Hi ${username},</p>
+                        <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this code below:</p>
+                        <h2>${verificationCode}</h2>
+                        <p>This code will expire in 15 minutes.</p>
                         <p class="note" >If you did not create an account, no further action is required. Feel free to ignore this email.</p>
-                        <p class="thank-you">Thank you!</p>
-                        <p>The Kismet Team KSM</p>
+                        <p class="thank-you">Else, proceed to verify email.</p>
+                        <p>The Kismet Team KSM ${process.env.OWNER_EMAIL}</p>
                     </div>
                    <div class="footer">
-                        <p class="note" >If you have any questions, feel free to reach out to our support team.</p>
-                        <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can unsubscribe at any time.</p>
+                        <p class="note" >If you have any questions, feel free to reach out to our support team. We're here to help!</p>
+                        <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can <a href="unsubscribe">unsubscribe</a> at any time.</p>
                         <p style="text-align: center; font-size: 12px; color: #777777;">&copy; ${new Date().getFullYear()} Kismet. All rights reserved.</p>
                     </div>
                 </body>
                 </html>
-            `,
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log("Error send email", error);
-        return res.status(500).json({ message: "error sending email" });
-      }
-      console.log("Email sent");
-      return res.status(200).json({ message: `Email sent to ${email}` });
+       `,
+    }
+    console.log("SendGrid message object", msg);
+    await sgMail.send(msg);
+    console.log("Verification email sent to ", email);
+    res.status(200).json({
+      message: `A new verification code has been sent to ${email}. Please check your email for the code.`,
     });
+
+    
   } catch (error) {
     console.log("Error in resend code route", error);
     res.status(500).json({ message: "Internal server error" });
