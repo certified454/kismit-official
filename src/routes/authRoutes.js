@@ -73,12 +73,26 @@ router.post("/register", async (req, res) => {
     const verificationCode = generateVerificationCode();
     const verificationCodeExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
 
+    const user = new User({
+      username,
+      email,
+      password,
+      profilePicture: profilePictureUrl,
+      verificationCode,
+      verificationCodeExpires,
+      isVerified: false,
+      isOwner: email === process.env.OWNER_EMAIL,
+    });
+
+    if (!user) {
+      console.log("User is not valid");
+      return res.status(400).json({ message: "User is not valid" });
+    } else {
+      await user.save();
+    }
     //configure nodemailer
     const transporter = nodemailer.createTransport({
       service: "gmail",
-      port: 465,
-      secure: true,
-      host: "smtp.gmail.com",
       auth: {
         user: process.env.EMAIL,
         pass: process.env.EMAIL_PASSWORD,
@@ -192,23 +206,7 @@ router.post("/register", async (req, res) => {
         },
       });
     });
-    const user = new User({
-      username,
-      email,
-      password,
-      profilePicture: profilePictureUrl,
-      verificationCode,
-      verificationCodeExpires,
-      isVerified: false,
-      isOwner: email === process.env.OWNER_EMAIL,
-    });
-
-    if (!user) {
-      console.log("User is not valid");
-      return res.status(400).json({ message: "User is not valid" });
-    } else {
-      await user.save();
-    }
+    
   } catch (error) {
     console.log("Error in register route", error);
     res.status(500).json({ message: "Internal server error" });
@@ -312,9 +310,9 @@ router.post("/resend-code", async (req, res) => {
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
-      port: 465,
-      secure: true,
-      host: "smtp.gmail.com",
+      // port: 465,
+      // secure: true,
+      // host: "smtp.gmail.com",
       auth: {
         user: process.env.EMAIL,
         pass: process.env.EMAIL_PASSWORD,
