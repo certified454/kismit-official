@@ -68,23 +68,7 @@ router.post("/register", async (req, res) => {
     const verificationCode = generateVerificationCode();
     const verificationCodeExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
 
-    const user = new User({
-      username,
-      email,
-      password,
-      profilePicture: profilePictureUrl,
-      verificationCode,
-      verificationCodeExpires,
-      isVerified: false,
-      isOwner: email === process.env.OWNER_EMAIL,
-    });
-
-    if (!user) {
-      console.log("User is not valid");
-      return res.status(400).json({ message: "User is not valid" });
-    } else {
-      await user.save();
-    }
+    
     //configure nodemailer
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -93,6 +77,8 @@ router.post("/register", async (req, res) => {
         pass: process.env.EMAIL_PASSWORD,
       },
     });
+
+    console.log("Transporter created:", !!transporter);
 
     const mailOptions = {
       from: process.env.EMAIL,
@@ -181,6 +167,8 @@ router.post("/register", async (req, res) => {
             `,
     };
 
+    console.log("Mail options created:", mailOptions);
+
     transporter.sendMail(mailOptions, (error) => {
       if (error) {
         console.log("Error Sending Verification Email", error);
@@ -201,7 +189,23 @@ router.post("/register", async (req, res) => {
         },
       });
     });
-    
+    const user = new User({
+      username,
+      email,
+      password,
+      profilePicture: profilePictureUrl,
+      verificationCode,
+      verificationCodeExpires,
+      isVerified: false,
+      isOwner: email === process.env.OWNER_EMAIL,
+    });
+
+    if (!user) {
+      console.log("User is not valid");
+      return res.status(400).json({ message: "User is not valid" });
+    } else {
+      await user.save();
+    }
   } catch (error) {
     console.log("Error in register route", error);
     res.status(500).json({ message: "Internal server error" });
