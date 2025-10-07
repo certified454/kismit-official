@@ -395,93 +395,77 @@ router.post('/forgotten-password', async (req, res) => {
         console.log("User not found");
         return res.status(400).json({ message: "User not found" });
       }
-
       const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
       const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
 
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        port: 465,
-        secure: true,
-        host: "smtp.gmail.com",
-        auth: {
-          user: process.env.EMAIL,
-          pass: process.env.EMAIL_PASSWORD,
-        }, 
-      });
-     
-      const mailOptions = {
-        from: process.env.EMAIL,
+      const msg = {
         to: email,
-        subject: "Password Reset",
+        from: process.env.EMAIL,
+        subject: 'Reset Password',
         html: `
-                <Doctype html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Reset your password</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            background-color: #ffffff;
-                            color: #000000;
-                            margin: 0;
-                            padding: 20px;
-                            line-height: 1.6;
-                        }
-                        .container {
-                            max-width: 600px;
-                            margin: 0 auto;
-                            padding: 30px;
-                            background-color: #f5f5f5;
-                            border-radius: 5px;
-                        }
-                        .footer {
-                            margin-top: 25px;
-                            padding: 10px;
-                            background-color: #f5f5f5;
-                            text-align: center;
-                            font-size: 12px;
-                            color: #777777;
-                            border-radius: 5px;
-                        }
-                        h1 {
-                            color: #4B0082;
-                            font-size: 24px;
-                            margin-bottom: 20px;
-                            text-align: center;
-                        }
-                  </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <h1>Password Reset Request</h1>
-                        <p>Hi ${user.username},</p>
-                        <p>We received a request to reset your password. Click the link below to set a new password:</p>
-                        <p><a href="${resetLink}">Reset Password</a></p>
-                        <p>This link will expire in 1 hour.</p>
-                        <p class="note" >If you did not request a password reset, no further action is required. Feel free to ignore this email.</p>
-                        <p class="thank-you">Thank you!</p>
-                        <p>The Kismet Team KSM</p>
-                    </div>
-                   <div class="footer">
-                        <p class="note" >If you have any questions, feel free to reach out to our support team.</p>
-                        <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can unsubscribe at any time.</p>
-                        <p style="text-align: center; font-size: 12px; color: #777777;">&copy; ${new Date().getFullYear()} Kismet. All rights reserved.</p>
-                    </div>
-                </body>
-                </html>
-            `,
-      };
-      transporter.sendMail(mailOptions, (error) => {
-        if (error) {
-          console.log("Error sending email", error);
-          return res.status(500).json({ message: "Error sending email" });
-        }
-        console.log("Email sent");
-        return res.status(200).json({ message: `Email sent to ${email}` });
-      });
+              <Doctype html>
+              <html>
+              <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>Reset your password</title>
+                  <style>
+                      body {
+                          font-family: Arial, sans-serif;
+                          background-color: #ffffff;
+                          color: #000000;
+                          margin: 0;
+                          padding: 20px;
+                          line-height: 1.6;
+                      }
+                      .container {
+                          max-width: 600px;
+                          margin: 0 auto;
+                          padding: 30px;
+                          background-color: #f5f5f5;
+                          border-radius: 5px;
+                      }
+                      .footer {
+                          margin-top: 25px;
+                          padding: 10px;
+                          background-color: #f5f5f5;
+                          text-align: center;
+                          font-size: 12px;
+                          color: #777777;
+                          border-radius: 5px;
+                      }
+                      h1 {
+                          color: #4B0082;
+                          font-size: 24px;
+                          margin-bottom: 20px;
+                          text-align: center;
+                      }
+                </style>
+              </head>
+              <body>
+                  <div class="container">
+                      <h1>Password Reset Request</h1>
+                      <p>Hi ${user.username},</p>
+                      <p>We received a request to reset your password. Click the link below to set a new password:</p>
+                      <p><a href="${resetLink}">Reset Password</a></p>
+                      <p>This link will expire in 1 hour.</p>
+                      <p class="note" >If you did not request a password reset, no further action is required. Feel free to ignore this email.</p>
+                      <p class="thank-you">Thank you!</p>
+                      <p>The Kismet Team KSM</p>
+                  </div>
+                  <div class="footer">
+                      <p class="note" >If you have any questions, feel free to reach out to our support team.</p>
+                      <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can unsubscribe at any time.</p>
+                      <p style="text-align: center; font-size: 12px; color: #777777;">&copy; ${new Date().getFullYear()} Kismet. All rights reserved.</p>
+                  </div>
+              </body>
+              </html>
+          `,
+      }
+      await sgMail.send(msg);
+
+      console.log("Email sent");
+      return res.status(200).json({ message: `Email sent to ${email}` });
     } catch (error) {
       console.log("Error in forgot password route", error);
       res.status(500).json({ message: "Internal server error" });
