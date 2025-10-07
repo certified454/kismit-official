@@ -1,12 +1,15 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
+// import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import "dotenv/config";
 
 import User from "../modules/user.js";
 import cloudinary from "../lib/cloudinary.js";
 
 const router = express.Router();
+
+sgMail.setApiKey(process.env.EMAIL_PASSWORD);
 
 const generateToken = (userId, isOwner) => {
   return jwt.sign({ userId, isOwner }, process.env.JWT_SECRET, { expiresIn: "15d" });
@@ -68,21 +71,27 @@ router.post("/register", async (req, res) => {
     const verificationCode = generateVerificationCode();
     const verificationCodeExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
 
-    
-    //configure nodemailer
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASSWORD,
-      },
+    const user = new User({
+      username,
+      email,
+      password,
+      profilePicture: profilePictureUrl,
+      verificationCode,
+      verificationCodeExpires,
+      isVerified: false,
+      isOwner: email === process.env.OWNER_EMAIL,
     });
 
-    console.log("Transporter created:", !!transporter);
+    if (!user) {
+      console.log("User is not valid");
+      return res.status(400).json({ message: "User is not valid" });
+    } else {
+      await user.save();
+    }
 
-    const mailOptions = {
-      from: process.env.EMAIL,
+    const msg = {
       to: email,
+      from: process.env.EMAIL,
       subject: "Email Verification",
       html: `
                 <!DOCTYPE html>
@@ -164,48 +173,23 @@ router.post("/register", async (req, res) => {
                     </div>
                 </body>
                 </html>
-            `,
-    };
-
-    console.log("Mail options created:", mailOptions);
-
-    transporter.sendMail(mailOptions, (error) => {
-      if (error) {
-        console.log("Error Sending Verification Email", error);
-        return res
-          .status(500)
-          .json({ message: "Error sending verification email" });
-      }
-      const token = generateToken(user._id, user.isOwner);
-      res.status(201).json({
-        token,
-        user: {
-          _id: user._id,
-          username: user.username,
-          email: user.email,
-          profilePicture: user.profilePicture,
-          isVerified: user.isVerified,
-          isOwner: user.isOwner,
-        },
-      });
-    });
-    const user = new User({
-      username,
-      email,
-      password,
-      profilePicture: profilePictureUrl,
-      verificationCode,
-      verificationCodeExpires,
-      isVerified: false,
-      isOwner: email === process.env.OWNER_EMAIL,
-    });
-
-    if (!user) {
-      console.log("User is not valid");
-      return res.status(400).json({ message: "User is not valid" });
-    } else {
-      await user.save();
+       `,
     }
+    console.log("SendGrid message object", msg);
+    await sgMail.send(msg);
+    console.log("Verification email sent to ", email);
+    
+    res.status(201).json({ 
+      message: `User registered successfully. A verification code has been sent to ${email}. Please check your email for the code.`,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        isOwner: user.email === process.env.OWNER_EMAIL,
+      }
+    });
+   
+  
   } catch (error) {
     console.log("Error in register route", error);
     res.status(500).json({ message: "Internal server error" });
