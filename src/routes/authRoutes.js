@@ -355,9 +355,9 @@ router.post("/resend-code", async (req, res) => {
                     <div class="container">
                         <h1>New Account Registration</h1>
                         <img src="https://github.com/certified454/My-portfolio/blob/326ea0bcae6116cb6b6058825fe4df08f3bec7c1/adaptive-icon.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
-                        <p>Hi ${username},</p>
+                        <p>Hi ${user.username},</p>
                         <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this code below:</p>
-                        <h2>${verificationCode}</h2>
+                        <h2>${user.verificationCode}</h2>
                         <p>This code will expire in 15 minutes.</p>
                         <p class="note" >If you did not create an account, no further action is required. Feel free to ignore this email.</p>
                         <p class="thank-you">Else, proceed to verify email.</p>
