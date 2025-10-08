@@ -285,6 +285,7 @@ router.post("/resend-code", async (req, res) => {
 
     user.verificationCode = newVerificationCode;
     user.verificationCodeExpires = newVerificationCodeExpires;
+    await user.save();
     const msg = {
       to: email,
       from: process.env.EMAIL,
