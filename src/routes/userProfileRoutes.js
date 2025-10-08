@@ -176,7 +176,7 @@ router.post('/:userId/follow', protectRoute, async (req, res) => {
                             badge: 1
                         })
                     })
-                    console.log('Push notification sent successfully');
+                    console.log('Sending notification to expoPushToken:', targetUser.expoPushToken, 'for user:', targetUser.username);
                 } catch (error) {
                     console.error('Error sending push notification:', error);
                 }
