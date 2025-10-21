@@ -3,7 +3,6 @@ import protectRoute from '../middleware/auth.middleware.js';
 import Compete from '../modules/compete.js';
 import User from '../modules/user.js';
 import Team from '../modules/team.js';
-import { request } from 'http';
 
 const router = express.Router();
 
