@@ -88,41 +88,6 @@ router.get('/:userId/analysis', protectRoute, async ( req, res) =>{
         res.status(500).json({message: 'Internal sever error'})
     }
 });
-router.post('/:userId/expoPushToken', protectRoute, async (req, res) => {
-  const userId = req.params.userId;
-  const { expoPushToken } = req.body;
-
-  if (!expoPushToken) {
-    console.log('expoPushToken is required');
-    return res.status(400).json({ message: 'expoPushToken is required' });
-  }
-
-  // Ensure authenticated user can only set their own token
-  if (req.user._id.toString() !== userId.toString()) {
-    console.warn(`User ${req.user._id} attempted to set token for ${userId}`);
-    return res.status(403).json({ message: 'Forbidden: cannot set token for another user' });
-  }
-
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (typeof expoPushToken !== 'string' || expoPushToken.trim() === '') {
-      console.log('Expo push token is empty or invalid');
-      return res.status(400).json({ message: 'expoPushToken cannot be an empty string' });
-    }
-
-    user.expoPushToken = expoPushToken.trim();
-    await user.save();
-
-    res.status(200).json({ message: 'expoPushToken saved successfully', success: true });
-  } catch (error) {
-    console.error('Error saving expoPushToken:', error);
-    res.status(500).json({ message: 'Internal server error', success: false });
-  }
-});
 router.post('/:userId/follow', protectRoute, async (req, res) => {
     const targetUserObjectId = req.params.userId;
     const currentUserObjectId = req.user._id

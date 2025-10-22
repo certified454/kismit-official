@@ -197,7 +197,7 @@ router.post("/register", async (req, res) => {
 
 router.post("/verify-code", async (req, res) => {
   try {
-    const { email, code } = req.body;
+    const { email, code, expoPushToken } = req.body;
 
     if (!email || !code) {
       console.log("Email and verification code is required.");
@@ -241,6 +241,10 @@ router.post("/verify-code", async (req, res) => {
     user.isVerified = true;
     user.verificationCode = null;
     user.verificationCodeExpires = null;
+
+    if (expoPushToken && typeof expoPushToken === 'string' && expoPushToken.trim()) {
+      user.expoPushToken = expoPushToken.trim();
+    }
     await user.save();
 
     res.json({ 
@@ -474,7 +478,7 @@ router.post('/forgotten-password', async (req, res) => {
 })
 
 router.post('/reset-password', async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { token, newPassword, expoPushToken } = req.body;
   try {
     if (!token || !newPassword) 
       return res.status(400).json({ message: "Token and new password are required" });
@@ -487,7 +491,10 @@ router.post('/reset-password', async (req, res) => {
         return res.status(400).json({ message: "Password must be at least 6 characters long" });
 
       user.password = newPassword;
-      
+      if (expoPushToken && typeof expoPushToken === "string" && expoPushToken.trim()) {
+        user.expoPushToken = expoPushToken.trim();
+      }
+
       await user.save();
       res.status(200).json({ message: "Password reset successful" });
     });
@@ -499,7 +506,7 @@ router.post('/reset-password', async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, expoPushToken } = req.body;
 
     if (!email || !password)
       return res.status(400).json({ message: "All fields are required" });
@@ -529,6 +536,9 @@ router.post("/login", async (req, res) => {
     const token = generateToken(user._id);
 
     user.lastLogin = Date.now();
+    if (expoPushToken && typeof expoPushToken === "string" && expoPushToken.trim()) {
+      user.expoPushToken = expoPushToken.trim();
+    }
     await user.save();
 
     res.status(200).json({
