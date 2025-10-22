@@ -14,14 +14,6 @@ const playerSchema = new mongoose.Schema({
     },
     stats: {
         type: Object,
-    },
-    espnId: {
-        type: String,
-        unique: true,
-        sparse: true
-    },
-    espnRaw: {
-        type: mongoose.Schema.Types.Mixed,
     }
 }, { timestamps: true });
 

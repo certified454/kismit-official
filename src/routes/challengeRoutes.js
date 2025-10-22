@@ -8,6 +8,7 @@ import Vote from "../modules/vote.js";
 const router = express.Router();
 
 router.post('/register', protectRoute, ownerOnly, async (req, res) => {
+    const user = req.user
     const { title, description, time, pools, startDate, endDate, } = req.body;
 
     try {
@@ -33,8 +34,35 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
             user: req.user._id
         });
         await newChallenge.save();
+        // first get all users apart from isOwner and send them a notification about the new challenge
+        const allUsers =  await mongoose.model('User').find({
+             _id: { $ne: user._id },
+             expoPushToken: { $exists: true, $ne: null }
+        }).select('expoPushToken _id');
+
+        const sendPromises = allUsers.map((usr) => {
+            fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    to: usr.expoPushToken,
+                    title: 'This Week Challenge is Live!',
+                    body: `Check out what is live now: ${newChallenge.title}, Remember early entry stand a chance to wn rewards`,
+                    data: { challengeId: newChallenge._id.toString() },
+                })
+            }).catch((error) => ({ ok: false, error: error, userId: usr._id }));
+        });
+        const results = await Promise.allSettled(sendPromises);
+        results.forEach((result, idx) => {
+            if (result.status === 'rejected' || (result.value && result.value.ok === false)) {
+                console.error(`Failed to send notification to user ${allUsers[idx]._id}:`, result.reason || result.value.error);
+            }
+        })
 
         const populatedChallenge = await Challenge.findById(newChallenge._id).populate('user', 'username profilePicture');
+    
         req.app.get('io').emit('new challenge created', {
             _id: populatedChallenge._id,
             user: {
