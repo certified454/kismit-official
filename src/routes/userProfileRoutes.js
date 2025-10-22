@@ -97,21 +97,26 @@ router.post('/:userId/expoPushToken', protectRoute, async (req, res) => {
     return res.status(400).json({ message: 'expoPushToken is required' });
   }
 
+  // Ensure authenticated user can only set their own token
+  if (req.user._id.toString() !== userId.toString()) {
+    console.warn(`User ${req.user._id} attempted to set token for ${userId}`);
+    return res.status(403).json({ message: 'Forbidden: cannot set token for another user' });
+  }
+
   try {
     const user = await User.findById(userId);
-    // console.log('Found user:', user);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    //get the expoPushToken before saving to the database
-    user.expoPushToken = expoPushToken;
-    //check if the expoPushToken is not am empty string
-    if(expoPushToken === "") {
-        console.log('Expo push token is empty')
-        return res.status(400).json({ message: 'expoPushToken cannot be an empty string' })
-    } else {
-        await user.save();
+
+    if (typeof expoPushToken !== 'string' || expoPushToken.trim() === '') {
+      console.log('Expo push token is empty or invalid');
+      return res.status(400).json({ message: 'expoPushToken cannot be an empty string' });
     }
+
+    user.expoPushToken = expoPushToken.trim();
+    await user.save();
+
     res.status(200).json({ message: 'expoPushToken saved successfully', success: true });
   } catch (error) {
     console.error('Error saving expoPushToken:', error);
