@@ -3,6 +3,7 @@ import express from 'express';
 import protectRoute from '../middleware/auth.middleware.js';
 import Post from '../modules/post.js';
 import Analysis from '../modules/analysis.js';
+import News from '../modules/news.js';
 import mongoose from 'mongoose';
 import User from '../modules/user.js';
 
