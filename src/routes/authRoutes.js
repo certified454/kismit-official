@@ -1,7 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import sgMail from "@sendgrid/mail";
-import protectRoute from "../middleware/protectRoute.js";
+import protectRoute from '../middleware/auth.middleware.js';
 import "dotenv/config";
 
 import User from "../modules/user.js";
