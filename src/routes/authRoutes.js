@@ -1,6 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import sgMail from "@sendgrid/mail";
+import protectRoute from "../middleware/protectRoute.js";
 import "dotenv/config";
 
 import User from "../modules/user.js";
@@ -557,4 +558,18 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.delete('/:id', protectRoute, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    await user.deleteOne();
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.log("Error in delete user route", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 export default router;
