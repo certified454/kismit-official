@@ -151,3 +151,78 @@ router.get('/earnings', protectRoute, async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 });
+
+// get all earning for a user dashboard
+router.get('/dashboard/earnings', protectRoute, async (req, res) => {
+    const userId = req.user._id;
+    try {
+        //display list of news articles which the user got earnings in that particular day. also show total earnings for that day
+        const earningsData = await News.aggregate([
+            { $match: { user: mongoose.Types.ObjectId(userId) } },
+
+            { $project: {
+                date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: 'UTC' } },
+                points: { 
+                    $add: [
+                        { $multiply: [ {$ifNull: ["$likesCount", 0] }, 2 ] },
+                        { $multiply: [{ $ifNull: ["$unlikesCount", 0] }, 1 ] }
+                    ]
+                }
+            }
+            },
+            {
+                $group: {
+                    _id: '$date',
+                    totalPoints: { $sum: '$points' },
+                }
+            },
+            { $sort: { _id: -1 } }
+        ]);
+
+        //map earnings data to include total earnings
+        const earningByDay = earningsData.map(d => ({
+            date: d._id,
+            totalPoints: d.totalPoints,
+            totalEarnings: Number(d.totalPoints * 0.05).toFixed(2)
+        }));
+
+        //convert yyyy-mm-dd to a more readable format
+        const toUTCDateString = dt => new Date(dt).toString().slice(0, 10);
+        const now = new Date();
+        const today = toUTCDateString(now);
+        const yesterday = toUTCDateString(new Date(now.getTime() -24 * 60 * 60 * 1000));
+
+        const toayEntry = earningByDay.find( e => e._id === today) || { date: today, totalPoints: 0, totalEarnings: (0).toFixed(2) }; 
+        const yesterdayEntry = earningByDay.find( e => e._id === yesterday) || { date: yesterday, totalPoints: 0, totalEarnings: (0).toFixed(2) };
+
+        // past totals exclude today and yesterday
+        const past = earningsData.filter( e => e._id !== today && e._id !== yesterday);
+        const pastTotals = past.map( d => ((acc, e) => {
+            acc.totalPoints += e.totalPoints;
+            acc.totalEarnings += e.totalEarnings;
+            console.log('Accumulating past totals:', acc);
+            return acc;
+        }, { totalPoints: 0, totalEarnings: 0}));
+
+        pastTotals.totalEarnings = Number(pastTotals.totalEarnings).toFixed(2);
+
+        console.log({
+            'earningByDay': earningByDay,
+            'today': toayEntry,
+            'yesterday': yesterdayEntry,
+            'pastTotals': pastTotals
+        });
+
+        res.status(200).json({
+            earningByDay,
+            today: toayEntry,
+            yesterday: yesterdayEntry,
+            pastTotals
+        })
+
+    } catch (error) {
+        console.error("Error fetching dashboard earnings:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+})
+;export default router;
