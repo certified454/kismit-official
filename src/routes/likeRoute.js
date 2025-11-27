@@ -105,4 +105,51 @@ router.post('/analysis/:analysisId/like', protectRoute, async (req, res) => {
     res.status(500).json({ message: "Internal server error", success: false });
   }
 })
+
+router.post('/news/:newsId/like', protectRoute, async (req, res) => {
+  const newsId = req.params.id;
+  const userId = req.user._id;
+
+  try {
+    const newsArticle = await News.findById(newsId);
+
+    if (!newsArticle) {
+      return res.status(400).json({ message: "News article not found" });
+    };
+    const liked = newsArticle.likedBy.includes(userId);
+   
+    let update;
+    let message;
+
+    if (liked) {
+      update = {
+        $pull: { like: userId },
+        $inc: { likesCount: -1 } 
+      }
+      message = "You have unliked this post";
+    } else {
+     update = {
+      $addToSet: { like: userId },
+      $inc: { likesCount: 1 }
+     }   
+       message = "You have liked this post";  
+    }
+    const updatedNews = await News.findByIdAndUpdate(newsId, update, {new: true})
+    // emit the likes event
+    req.app.get('io').emit('new like created', {
+      newsId: newsArticle._id,
+      userId: userId,
+      liked: !liked
+    });
+    console.log("Like event emitted");
+    res.status(200).json({
+      message,
+      newsArticle: updatedNews,
+      success: true
+    }); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error", success: false });
+  }
+});
 export default router;

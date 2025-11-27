@@ -112,6 +112,27 @@ router.get('/all', protectRoute, async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 });
+//get one news article by id
+router.get('/:newsId', protectRoute, async (req, res) =>{
+    const newsId = req.params.newsId;
+    try {
+        if (!mongoose.Types.ObjectId.isValid(newsId)) {
+            return res.status(400).json({ message: "Invalid news article ID." });
+        }
+        const newsArticle = await News.findById(newsId).populate('user', '_id username profilePicture');
+        if (!newsArticle) {
+            return res.status(404).json({ message: "News article not found." });
+        }
+        const likedByUser = newsArticle.like.some( id => id.toString() === req.user._id.toString());
+        const unlikedByUser = newsArticle.unlike.some( id => id.toString() === req.user._id.toString());
+
+        console.log(`Fetched news article: ${newsArticle._id}, likedByUser: ${likedByUser}, unlikedByUser: ${unlikedByUser}`);
+        res.status(200).json({ newsArticle, likedByUser, unlikedByUser });
+    } catch (error) {
+        console.error("Error fetching news article:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
 
 router.get('/earnings', protectRoute, async (req, res) => {
     // lets get the article id and check how many likes and unlikes it has
@@ -224,5 +245,5 @@ router.get('/dashboard/earnings', protectRoute, async (req, res) => {
         console.error("Error fetching dashboard earnings:", error);
         res.status(500).json({ message: "Server error" });
     }
-})
-;export default router;
+});
+export default router;
