@@ -11,10 +11,10 @@ const newsSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    pictures1: {
+    picture1: {
         type: String,
     },
-    pictures2: {
+    picture2: {
         type: String,
     },
     like: [{
