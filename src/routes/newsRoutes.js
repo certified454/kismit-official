@@ -59,61 +59,53 @@ router.post('/register', protectRoute, async (req, res) => {
 router.get('/all', protectRoute, async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit= parseInt(req.query.limit) || 10;
+        const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
         const userObjectId = new mongoose.Types.ObjectId(req.user._id);
-        const newsArticles = await News.aggregate(
-            [
-            // Calculate total engagement and sort by it
-                { $addFields: {
-                        totalEngagement: { $add: [ '$likesCount', '$unlikesCount' ]},
-                        likedByUser: {
-                            $in: [userObjectId, { $ifNull: [ '$likedBy', [] ]}]
-                        },
-                        unlikedByUser: {
-                            $in: [userObjectId, { $ifNull: [ '$unlikedBy', [] ]}]
-                        }
-                    }
+
+        const newsArticles = await News.aggregate([
+            { $addFields: {
+                totalEngagement: { $add: [ { $ifNull: ["$likesCount", 0] }, { $ifNull: ["$unlikesCount", 0] } ] },
+                likedByUser: { $in: [ userObjectId, { $ifNull: ["$like", []] } ] },
+                unlikedByUser: { $in: [ userObjectId, { $ifNull: ["$unlike", []] } ] }
+            } },
+            { $sort: { totalEngagement: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            { $lookup: {
+                from: 'users',
+                localField: 'user',
+                foreignField: '_id',
+                as: 'user'
+            } },
+            { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+            { $project: {
+                _id: 1,
+                description: 1,
+                picture1: 1,
+                picture2: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                user: {
+                    _id: '$user._id',
+                    username: '$user.username',
+                    profilePicture: '$user.profilePicture'
                 },
-                { $sort:  
-                    { totalEngagement: -1}
-                },
-                { $skip: skip },
-                { $limit: limit },
-                { $lookup: {
-                    from: 'users',
-                    localField: 'user',
-                    foreignField: '_id',
-                    as: 'user'
-                } },
-                { $unwind: '$user' },
-                { $project: {
-                    _id: 1,
-                    description: 1,
-                    picture1: 1,
-                    picture2: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    user: {
-                        _id: '$user._id',
-                        username: '$user.username',
-                        profilePicture: '$user.profilePicture'
-                    },
-                    likesCount: 1,
-                    unlikesCount: 1,
-                    likedByUser: 1,
-                    unlikedByUser: 1
-                }}
-            ]
-        );
-        const totalNewsCount = await News.countDocuments();
-        res.send({
-            newsArticles, 
+                likesCount: 1,
+                unlikesCount: 1,
+                likedByUser: 1,
+                unlikedByUser: 1
+            } }
+        ]);
+
+        const totalNewsCount = await News.countDocuments({}); 
+        res.status(200).json({
+            newsArticles,
             totalNewsCount,
             currentPage: page,
             totalPages: Math.ceil(totalNewsCount / limit)
-        })
+        });
     } catch (error) {
         console.error("Error fetching news articles:", error);
         res.status(500).json({ message: "Server error" });
