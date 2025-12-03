@@ -62,7 +62,7 @@ router.get('/all', protectRoute, async (req, res) => {
         const limit= parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const userObjectId = mongoose.Types.ObjectId(req.user._id);
+        const userObjectId = new mongoose.Types.ObjectId(req.user._id);
         const newsArticles = await News.aggregate(
             [
             // Calculate total engagement and sort by it
