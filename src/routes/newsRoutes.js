@@ -108,9 +108,6 @@ router.get('/all', protectRoute, async (req, res) => {
             ]
         );
         const totalNewsCount = await News.countDocuments();
-
-        const likedByUser = newsArticles.like.some( id => id.toString() === req.user._id.toString());
-        const unlikedByUser = newsArticles.unlike.some( id => id.toString() === req.user._id.toString());
         res.send({
             newsArticles, 
             totalNewsCount,
