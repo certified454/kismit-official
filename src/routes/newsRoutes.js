@@ -16,15 +16,17 @@ router.post('/register', protectRoute, async (req, res) => {
             console.log('Missing required fields');
             return res.status(400).json({ message: 'Enter a description and add images to create a news article'});
         };
+
         const uploaderResponse1 = await cloudinary.uploader.upload(picture1);
+        const picture1Url = uploaderResponse1.secure_url;
+
         const uploaderResponse2 = await cloudinary.uploader.upload(picture2);
-        const pictureUrl1 = uploaderResponse1.secure_url;
-        const pictureUrl2 = uploaderResponse2.secure_url;
+        const picture2Url = uploaderResponse2.secure_url;
 
         const newNews = new News({
             description,
-            pictures1: pictureUrl1,
-            pictures2: pictureUrl2,
+            picture1: picture1Url,
+            picture2: picture2Url,
             user: req.user._id
         });
         await newNews.save();
@@ -89,7 +91,8 @@ router.get('/all', protectRoute, async (req, res) => {
                 { $project: {
                     _id: 1,
                     description: 1,
-                    pictures: 1,
+                    picture1: 1,
+                    picture2: 1,
                     createdAt: 1,
                     updatedAt: 1,
                     user: {
