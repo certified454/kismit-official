@@ -9,19 +9,22 @@ import mongoose from 'mongoose';
 const router = express.Router();
 
 router.post('/register', protectRoute, async (req, res) => {
-    const { description, pictures } = req.body;
+    const { description, picture1, picture2 } = req.body;
 
     try {
-        if (!description || !pictures || pictures.length === 0) {
+        if (!description || !picture1 || !picture2 || picture1.length === 0 || picture2.length === 0) {
             console.log('Missing required fields');
             return res.status(400).json({ message: 'Enter a description and add images to create a news article'});
         };
-        const uploaderResponse = await cloudinary.uploader.upload(pictures);
-        const pictureUrls = uploaderResponse.secure_url;
+        const uploaderResponse1 = await cloudinary.uploader.upload(picture1);
+        const uploaderResponse2 = await cloudinary.uploader.upload(picture2);
+        const pictureUrl1 = uploaderResponse1.secure_url;
+        const pictureUrl2 = uploaderResponse2.secure_url;
 
         const newNews = new News({
             description,
-            pictures: pictureUrls,
+            pictures1: pictureUrl1,
+            pictures2: pictureUrl2,
             user: req.user._id
         });
         await newNews.save();
@@ -37,7 +40,8 @@ router.post('/register', protectRoute, async (req, res) => {
                 profilePicture: populatedNews.user.profilePicture
             },
             description: populatedNews.description,
-            pictures: populatedNews.pictures,
+            picture1: populatedNews.pictures1,
+            picture2: populatedNews.pictures2,
             likesCount: populatedNews.likesCount,
             unlikesCount: populatedNews.unlikesCount,
             createdAt: populatedNews.createdAt
