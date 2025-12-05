@@ -174,68 +174,102 @@ router.get('/earnings', protectRoute, async (req, res) => {
 
 // get all earning for a user dashboard
 router.get('/dashboard/earnings', protectRoute, async (req, res) => {
-    const userId = req.user._id;
+    const userId = new mongoose.Types.ObjectId(req.user._id);
     try {
-        //display list of news articles which the user got earnings in that particular day. also show total earnings for that day
-        const earningsData = await News.aggregate([
-            { $project: {
-                date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: 'UTC' } },
-                points: { 
+        // Get all news articles for this user with earnings breakdown
+        const newsArticles = await News.aggregate([
+            { $match: { user: userId } },
+            { $addFields: {
+                points: {
                     $add: [
-                        { $multiply: [ {$ifNull: ["$likesCount", 0] }, 2 ] },
-                        { $multiply: [{ $ifNull: ["$unlikesCount", 0] }, 1 ] }
+                        { $multiply: [ { $ifNull: ["$likesCount", 0] }, 2 ] },
+                        { $multiply: [ { $ifNull: ["$unlikesCount", 0] }, 1 ] }
+                    ]
+                },
+                earnings: {
+                    $multiply: [
+                        { $add: [
+                            { $multiply: [ { $ifNull: ["$likesCount", 0] }, 2 ] },
+                            { $multiply: [ { $ifNull: ["$unlikesCount", 0] }, 1 ] }
+                        ] },
+                        0.05
+                    ]
+                },
+                date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "UTC" } },
+                time: { $dateToString: { format: "%H:%M:%S", date: "$createdAt", timezone: "UTC" } }
+            } },
+            { $sort: { createdAt: -1 } },
+            { $project: {
+                _id: 1,
+                description: 1,
+                picture1: 1,
+                picture2: 1,
+                date: 1,
+                time: 1,
+                likesCount: 1,
+                unlikesCount: 1,
+                points: 1,
+                earnings: { $round: ["$earnings", 2] }
+            } }
+        ]);
+
+        // Calculate daily earnings summary
+        const earningsData = await News.aggregate([
+            { $match: { user: userId } },
+            { $project: {
+                date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "UTC" } },
+                points: {
+                    $add: [
+                        { $multiply: [ { $ifNull: ["$likesCount", 0] }, 2 ] },
+                        { $multiply: [ { $ifNull: ["$unlikesCount", 0] }, 1 ] }
                     ]
                 }
-            }
-            },
-            {
-                $group: {
-                    _id: '$date',
-                    totalPoints: { $sum: '$points' },
-                }
-            },
+            } },
+            { $group: {
+                _id: '$date',
+                totalPoints: { $sum: '$points' }
+            } },
             { $sort: { _id: -1 } }
         ]);
 
-        //map earnings data to include total earnings
         const earningByDay = earningsData.map(d => ({
             date: d._id,
             totalPoints: d.totalPoints,
-            totalEarnings: Number(d.totalPoints * 0.05).toFixed(2)
+            totalEarnings: Number((d.totalPoints * 0.05).toFixed(2))
         }));
 
-        //convert yyyy-mm-dd to a more readable format
-        const toUTCDateString = dt => new Date(dt).toString().slice(0, 10);
+        // Get today's and yesterday's totals
         const now = new Date();
-        const today = toUTCDateString(now);
-        const yesterday = toUTCDateString(new Date(now.getTime() -24 * 60 * 60 * 1000));
+        const todayDate = now.toISOString().split('T')[0];
+        const yesterdayDate = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        const toayEntry = earningByDay.find( e => e._id === today) || { date: today, totalPoints: 0, totalEarnings: (0).toFixed(2) }; 
-        const yesterdayEntry = earningByDay.find( e => e._id === yesterday) || { date: yesterday, totalPoints: 0, totalEarnings: (0).toFixed(2) };
+        const todayEntry = earningByDay.find(e => e.date === todayDate) || { date: todayDate, totalPoints: 0, totalEarnings: 0 };
+        const yesterdayEntry = earningByDay.find(e => e.date === yesterdayDate) || { date: yesterdayDate, totalPoints: 0, totalEarnings: 0 };
 
-        // past totals exclude today and yesterday
-        const past = earningsData.filter( e => e._id !== today && e._id !== yesterday);
-        const pastTotals = past.reduce((acc, e) => {
-            acc.totalPoints += e.totalPoints;
-            acc.totalEarnings += Number(e.totalEarnings);
-            return acc;
-        }, { totalPoints: 0, totalEarnings: '0.00' });
-        
-        pastTotals.totalEarnings = Number(pastTotals.totalEarnings).toFixed(2);
+        // Calculate total balance (all-time earnings)
+        const totalBalance = earningByDay.reduce((sum, d) => sum + d.totalEarnings, 0);
 
-        console.log({
-            'earningByDay': earningByDay,
-            'today': toayEntry,
-            'yesterday': yesterdayEntry,
-            'pastTotals': pastTotals
-        });
+        // Past totals (excluding today and yesterday)
+        const past = earningByDay.filter(e => e.date !== todayDate && e.date !== yesterdayDate);
+        const pastTotals = past.reduce((acc, e) => ({
+            totalPoints: acc.totalPoints + e.totalPoints,
+            totalEarnings: acc.totalEarnings + e.totalEarnings
+        }), { totalPoints: 0, totalEarnings: 0 });
 
         res.status(200).json({
-            earningByDay,
-            today: toayEntry,
-            yesterday: yesterdayEntry,
-            pastTotals
-        })
+            balance: Number(totalBalance.toFixed(2)),
+            articles: newsArticles,  // Individual articles with date, time, amount
+            summary: {
+                today: todayEntry,
+                yesterday: yesterdayEntry,
+                pastTotals,
+                allTime: {
+                    totalPoints: earningByDay.reduce((sum, d) => sum + d.totalPoints, 0),
+                    totalEarnings: Number(totalBalance.toFixed(2))
+                }
+            },
+            earningByDay  // Daily breakdown
+        });
 
     } catch (error) {
         console.error("Error fetching dashboard earnings:", error);
