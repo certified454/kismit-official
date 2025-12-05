@@ -178,8 +178,6 @@ router.get('/dashboard/earnings', protectRoute, async (req, res) => {
     try {
         //display list of news articles which the user got earnings in that particular day. also show total earnings for that day
         const earningsData = await News.aggregate([
-            { $match: { user: mongoose.Types.ObjectId(userId) } },
-
             { $project: {
                 date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: 'UTC' } },
                 points: { 
@@ -217,13 +215,12 @@ router.get('/dashboard/earnings', protectRoute, async (req, res) => {
 
         // past totals exclude today and yesterday
         const past = earningsData.filter( e => e._id !== today && e._id !== yesterday);
-        const pastTotals = past.map( d => ((acc, e) => {
+        const pastTotals = past.reduce((acc, e) => {
             acc.totalPoints += e.totalPoints;
-            acc.totalEarnings += e.totalEarnings;
-            console.log('Accumulating past totals:', acc);
+            acc.totalEarnings += Number(e.totalEarnings);
             return acc;
-        }, { totalPoints: 0, totalEarnings: 0}));
-
+        }, { totalPoints: 0, totalEarnings: '0.00' });
+        
         pastTotals.totalEarnings = Number(pastTotals.totalEarnings).toFixed(2);
 
         console.log({
