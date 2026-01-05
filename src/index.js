@@ -18,6 +18,8 @@ import competeRoutes from './routes/competeRoutes.js';
 import teamRoutes from "./routes/teamRoutes.js";
 import matchRoutes from "./routes/matchRoutes.js";
 import newsRoutes from "./routes/newsRoutes.js";
+import tagsRoutes from "./routes/tagRoutes.js";
+import contestRoutes from "./routes/contestRoutes.js";
 import { connectDB } from "./lib/db.js"
 
 const app = express();
@@ -49,6 +51,8 @@ app.use("/api/compete", competeRoutes);
 app.use("/api/team", teamRoutes);
 app.use("/api/match", matchRoutes);
 app.use("/api/news", newsRoutes);
+app.use("/api/tags", tagsRoutes);
+app.use("/api/contest", contestRoutes);
 
 io.on('connection', (socket) => {
     console.log('New client connected', socket.id);
@@ -85,7 +89,10 @@ io.on('connection', (socket) => {
         console.log('new vote created:', populatedVote);
         io.emit('new vote created', populatedVote);
     });
-
+    socket.on('newContest', (newContest) => {
+        console.log('new contest created:', newContest);
+        io.emit('newContest', newContest);
+    });
     // disconnect event
     socket.on('disconnect', () => {
         console.log('Client disconnected', socket.id);
