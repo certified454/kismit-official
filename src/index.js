@@ -18,7 +18,7 @@ import competeRoutes from './routes/competeRoutes.js';
 import teamRoutes from "./routes/teamRoutes.js";
 import matchRoutes from "./routes/matchRoutes.js";
 import newsRoutes from "./routes/newsRoutes.js";
-import tagsRoutes from "./routes/tagRoutes.js";
+import tagsRoutes from "./routes/tagsRoutes.js";
 import contestRoutes from "./routes/contestRoutes.js";
 import { connectDB } from "./lib/db.js"
 
