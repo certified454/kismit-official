@@ -1,4 +1,4 @@
-import expess from 'express';
+import express from 'express';
 import Contest from '../modules/contest.js';
 import protectRoute from '../middleware/auth.middleware.js';
 import cloudinary from '../lib/cloudinary.js';
