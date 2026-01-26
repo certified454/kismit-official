@@ -8,7 +8,7 @@ import Tag from '../modules/tag.js';
 const router = express.Router();
 
 // Route to create a new contest submission with video and audio files
-router.post('/contest', protectRoute, async (req, res) => {
+router.post('/register', protectRoute, async (req, res) => {
     const { description, video, audio } = req.body;
 
     try {

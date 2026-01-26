@@ -176,6 +176,11 @@ router.post("/register", async (req, res) => {
        `,
     }
   
+    //if sending email fails, return the error
+    if (!msg) {
+      console.log("Failed to create email message");
+      return res.status(500).json({ message: "Failed to create email message" });
+    }
     await sgMail.send(msg);
     console.log("Verification email sent to ", email);
 
