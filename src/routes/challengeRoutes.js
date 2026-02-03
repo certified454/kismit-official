@@ -4,15 +4,16 @@ import protectRoute from '../middleware/auth.middleware.js';
 import ownerOnly from "../middleware/owner.middleware.js";
 import Challenge from "../modules/challenge.js";
 import Vote from "../modules/vote.js";
+import cloudinary from '../lib/cloudinary.js';
 
 const router = express.Router();
 
 router.post('/register', protectRoute, ownerOnly, async (req, res) => {
     const user = req.user
-    const { title, description, time, pools, startDate, endDate, } = req.body;
+    const { leagueImage, title, description, time, questions, startDate, endDate, } = req.body;
 
     try {
-        if (!title || !description || !pools || !startDate || !endDate) {
+        if (!leagueImage || !title || !description || !questions || !startDate || !endDate) {
             console.log('all fields are required');
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -20,19 +21,29 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
             console.log("Invalid date range");
             return res.status(400).json({ message: "End date must be after start date" });
         }
-        if (!Array.isArray(pools) || pools.length === 0) {
-            console.log("Invalid pool count");
-            return res.status(400).json({ message: "At least one pool is required" });
+        if (!Array.isArray(questions) || questions.length === 0) {
+            console.log("Invalid questions");
+            return res.status(400).json({ message: "At least one question is required" });
         }
+        // validate question structure
+        const valid = questions.every(q => q && typeof q.text === 'string' && Array.isArray(q.checkBox) && q.checkBox.length >= 2 && q.checkBox.every(opt => opt && typeof opt.option === 'string' && typeof opt.value === 'string'));
+        if (!valid) {
+            console.log('Invalid question structure');
+            return res.status(400).json({ message: 'Each question must have `text` and at least two `checkBox` options with `option` and `value`' });
+        }
+        const uploadResponse = await cloudinary.uploader.upload(leagueImage);
+        const leagueImageUrl = uploadResponse.secure_url;
         const newChallenge = new Challenge({
+            leagueImage: leagueImageUrl,
             title,
             description,
             time,
-            pools, 
+            questions,
             startDate,
             endDate,
             user: req.user._id
         });
+
         await newChallenge.save();
         // first get all users apart from isOwner and send them a notification about the new challenge
         const allUsers =  await mongoose.model('User').find({
@@ -49,7 +60,7 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
                 body: JSON.stringify({
                     to: usr.expoPushToken,
                     title: 'This Week Challenge is Live!',
-                    body: `Check out what is live now: ${newChallenge.title}, Remember early entry stand a chance to wn rewards`,
+                    body: `Check out what is live now: ${newChallenge.title}, Remember early entries stand a chance to win cash prizes`,
                     data: { challengeId: newChallenge._id.toString() },
                 })
             }).catch((error) => ({ ok: false, error: error, userId: usr._id }));
@@ -70,10 +81,11 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
                 username: populatedChallenge.user.username,
                 profilePicture: populatedChallenge.user.profilePicture
             },
+            leagueImage: populatedChallenge.leagueImage,
             title: populatedChallenge.title,
             description: populatedChallenge.description,
             time: populatedChallenge.time,
-            pools: populatedChallenge.pools,
+            questions: populatedChallenge.questions,
             startDate: populatedChallenge.startDate,
             endDate: populatedChallenge.endDate,
             createdBy: populatedChallenge.createdBy
@@ -127,10 +139,11 @@ router.get("/all", protectRoute, async (req, res) => {
         {
             $project: {
                 _id: 1,
+                leagueImage: 1,
                 title: 1,
                 description: 1,
                 time: 1,
-                pools: 1,
+                questions: 1,
                 startDate: 1,
                 isChallengeActive: 1,
                 endDate: 1,
@@ -151,7 +164,6 @@ router.get("/all", protectRoute, async (req, res) => {
 
 router.get('/:challengeId', protectRoute, async (req, res) => {
     const challengeId = req.params.challengeId;
-    const user = req.user._id;
 
     try {
         const challenge = await Challenge.findById(challengeId)

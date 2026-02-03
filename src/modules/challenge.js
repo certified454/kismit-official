@@ -1,10 +1,13 @@
 import mongoose from "mongoose";
 
-const poolOptionSchema = new mongoose.Schema({
-    optionText: {
+const optionSchema = new mongoose.Schema({
+    option: {
         type: String,
-        required: true,
-        trim: true
+        required: true
+    },
+    value: {
+        type: String,
+        required: true
     },
     vote: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -12,7 +15,18 @@ const poolOptionSchema = new mongoose.Schema({
     }]
 });
 
+const questionSchema = new mongoose.Schema({
+    text: {
+        type: String,
+        required: true
+    },
+    checkBox: [optionSchema]
+});
+
 const challengeSchema = new mongoose.Schema({
+    leagueImage: {
+        type: String,
+    },
     title: {
         type: String,
         required: true,
@@ -27,9 +41,7 @@ const challengeSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    pools: [
-        poolOptionSchema
-    ],
+    questions: [questionSchema],
     startDate: {
         type: Date,
         required: true
@@ -57,3 +69,4 @@ const challengeSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 export default mongoose.model("Challenge", challengeSchema);
+
