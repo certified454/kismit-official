@@ -4,63 +4,132 @@ import Vote from "../modules/vote.js";
 import protectRoute from "../middleware/auth.middleware.js";
 import mongoose from "mongoose";
 const router = express.Router();
-//route to vote on a challenge
+//route to vote on a challenge by selecting options
 router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
-    const { text } = req.body;
+    const { answers } = req.body; // answers is an object like { q1: 'optionValue', q2: 'optionValue' }
     const user = req.user._id;
     const challengeId = req.params.challengeId;
-    const existingUser = await Vote.findOne({ user, challenge: challengeId });
-    const now = new Date();
-    const time = new Date(challengeId.time);
-    const start = new Date(challengeId.startDate);
-    const end = new Date(challengeId.endDate);
-    start.setHours(time.getHours());
-    start.setMinutes(time.getMinutes());
-    start.setSeconds(0);
+    
     try {
-        if (!text) {
-            console.log("No text provided");
-            return res.status(400).json({ message: "No text provided" });
+        // Validate inputs
+        if (!answers || Object.keys(answers).length === 0) {
+            console.log("No answers provided");
+            return res.status(400).json({ message: "No answers provided" });
         }
+
+        // Fetch the challenge
         const challenge = await Challenge.findById(challengeId);
-        if(!challenge) {
+        if (!challenge) {
             return res.status(404).json({ message: "Challenge not found" });
         }
-        
-        if( now >= start) {
-            console.log("Challenge has already started, voting is closed");
-            return res.status(400).json({ message: "Challenge has already started, voting is closed" });
-        }
-        if( now >= end ) {
-            console.log("Challenge has already ended, voting is closed");
-            return res.status(400).json({ message: "Challenge has already ended, voting is closed" });
-        }
-        if(existingUser) {
+
+        // Check if user has already voted on this challenge
+        const existingVote = await Vote.findOne({ user, challenge: challengeId });
+        if (existingVote) {
             console.log("User has already voted on this challenge");
             return res.status(400).json({ message: "User has already voted on this challenge" });
-        } else {
-            const newVote = new Vote({
-                text,
-                user,
-                challenge: challengeId,
-            });
-            await newVote.save();
-            const populatedVote = await Vote.findById(newVote._id).populate('user', 'username avatarUrl').populate('challenge');
-            req.app.get('io').emit('new vote created', {
-                _id: populatedVote._id,
-                user: {
-                    _id: populatedVote.user._id,
-                    username: populatedVote.user.username,
-                    avatarUrl: populatedVote.user.avatarUrl
-                },
-                text: populatedVote.text,
-            })
-            console.log("Vote submitted:");
-            res.status(201).json({ message: "Vote submitted", vote: newVote, populatedVote });
         }
+
+        // Check time constraints
+        const now = new Date();
+        const startDate = new Date(challenge.startDate);
+        const endDate = new Date(challenge.endDate);
+        const challengeTime = new Date(challenge.time);
+
+        startDate.setHours(challengeTime.getHours());
+        startDate.setMinutes(challengeTime.getMinutes());
+        startDate.setSeconds(0);
+
+        // Allow voting only before challenge starts
+        if (now >= startDate) {
+            console.log("Challenge has started, voting is disabled");
+            return res.status(400).json({ message: "Challenge has started, voting is disabled" });
+        }
+
+        // Dissable voting exactly at challenge start time
+        if (now.getTime() === startDate.getTime()) {
+            console.log("Challenge has started, voting is disabled");
+            return res.status(400).json({ message: "Challenge has started, voting is disabled" });
+        }
+        
+        // Dissable voting after challenge ends
+        if (now > endDate) {
+            console.log("Challenge has ended, voting is disabled");
+            return res.status(400).json({ message: "Challenge has ended, voting is disabled" });
+        }
+
+        // Voting is allowed before challenge starts
+        console.log("Voting is open, user can vote");
+
+        // Validate that answers correspond to actual questions and options
+        for (const [questionKey, selectedValue] of Object.entries(answers)) {
+            if (selectedValue === null || selectedValue === undefined) continue;
+            
+            const questionIndex = parseInt(questionKey.replace('q', '')) - 1;
+            const question = challenge.questions[questionIndex];
+            
+            if (!question) {
+                return res.status(400).json({ message: `Invalid question: ${questionKey}` });
+            }
+
+            const optionExists = question.checkBox.some(opt => opt.value === selectedValue);
+            if (!optionExists) {
+                return res.status(400).json({ message: `Invalid option for ${questionKey}` });
+            }
+        }
+
+        // Create and save the vote
+        const newVote = new Vote({
+            answers,
+            user,
+            challenge: challengeId,
+        });
+        await newVote.save();
+
+        // Update vote counts for selected options
+        for (const [questionKey, selectedValue] of Object.entries(answers)) {
+            if (selectedValue === null || selectedValue === undefined) continue;
+            
+            const questionIndex = parseInt(questionKey.replace('q', '')) - 1;
+            await Challenge.updateOne(
+                {
+                    _id: challengeId,
+                    'questions._id': challenge.questions[questionIndex]._id,
+                    'questions.checkBox.value': selectedValue
+                },
+                {
+                    $addToSet: { 'questions.$[].checkBox.$[option].vote': user }
+                },
+                {
+                    arrayFilters: [{ 'option.value': selectedValue }]
+                }
+            );
+        }
+
+        // Update challenge vote count
+        await Challenge.findByIdAndUpdate(
+            challengeId,
+            {
+                $addToSet: { vote: user },
+                $inc: { voteCount: 1 }
+            }
+        );
+
+        const populatedVote = await Vote.findById(newVote._id).populate('user', 'username avatarUrl').populate('challenge');
+        req.app.get('io').emit('new vote created', {
+            _id: populatedVote._id,
+            user: {
+                _id: populatedVote.user._id,
+                username: populatedVote.user.username,
+                avatarUrl: populatedVote.user.avatarUrl
+            },
+            answers: populatedVote.answers,
+        });
+        console.log("Vote submitted:", answers);
+        res.status(201).json({ message: "Vote submitted successfully before challenge started", vote: newVote, populatedVote });
     } catch (error) {
         console.error("Error submitting vote:", error);
-        res.status(500).json({ message: "Error submitting vote" });
+        res.status(500).json({ message: "Error submitting vote", error: error.message });
     }
 })
 

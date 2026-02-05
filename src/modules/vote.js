@@ -13,12 +13,9 @@ const voteSchema = new mongoose.Schema({
     },
     option: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'PoolOption'
-    },
-    text: {
-        type: String,
+        ref: 'Challenge.questions.checkBox',
         required: true
-    }
+    },
 }, { timestamps: true });
 
 export default mongoose.model("Vote", voteSchema);
