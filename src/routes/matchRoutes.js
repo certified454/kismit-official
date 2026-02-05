@@ -14,6 +14,17 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
             console.log('all fields are required');
             return res.status(400).json({ message: 'All fields are required' });
         };
+        // Validate image URIs before upload (supports data URIs for all image types: png, jpg, jpeg, etc)
+        const validateImageUri = (imageUri, fieldName) => {
+            if (typeof imageUri !== 'string' || imageUri.trim().length === 0) {
+                throw new Error(`${fieldName} must be a non-empty string`);
+            }
+            if (!imageUri.startsWith('data:image/') && !imageUri.startsWith('http://') && !imageUri.startsWith('https://') && !imageUri.startsWith('file://') && !imageUri.startsWith('content://')) {
+                throw new Error(`${fieldName} must be a data URI (data:image/...), HTTP(S) URL, or device file URI`);
+            }
+        };
+        validateImageUri(homeTeamLogo, 'homeTeamLogo');
+        validateImageUri(awayTeamLogo, 'awayTeamLogo');
         // upload homeTeamLogo to cloudinary
         const uploadHomeTeamLogoResponse = await cloudinary.uploader.upload(homeTeamLogo);
         const homeTeamLogoUrl = uploadHomeTeamLogoResponse.secure_url;

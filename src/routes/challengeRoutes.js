@@ -31,6 +31,14 @@ router.post('/register', protectRoute, ownerOnly, async (req, res) => {
             console.log('Invalid question structure');
             return res.status(400).json({ message: 'Each question must have `text` and at least two `checkBox` options with `option` and `value`' });
         }
+        // Validate and prepare leagueImage for Cloudinary upload
+        // Accepts: data URIs (data:image/png;base64,..., data:image/jpg;base64,..., etc), http/https URLs, or local file:// URIs
+        if (typeof leagueImage !== 'string' || leagueImage.trim().length === 0) {
+            return res.status(400).json({ message: 'leagueImage must be a non-empty string' });
+        }
+        if (!leagueImage.startsWith('data:image/') && !leagueImage.startsWith('http://') && !leagueImage.startsWith('https://') && !leagueImage.startsWith('file://') && !leagueImage.startsWith('content://')) {
+            return res.status(400).json({ message: 'leagueImage must be a data URI (data:image/...), HTTP(S) URL, or device file URI' });
+        }
         const uploadResponse = await cloudinary.uploader.upload(leagueImage);
         const leagueImageUrl = uploadResponse.secure_url;
         const newChallenge = new Challenge({
