@@ -11,11 +11,10 @@ const voteSchema = new mongoose.Schema({
         ref: 'Challenge',
         required: true
     },
-    option: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Challenge.questions.checkBox',
+    answers: {
+        type: mongoose.Schema.Types.Mixed,
         required: true
-    },
+    }
 }, { timestamps: true });
 
 export default mongoose.model("Vote", voteSchema);

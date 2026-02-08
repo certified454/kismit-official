@@ -62,8 +62,13 @@ router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
         console.log("Voting is open, user can vote");
 
         // Validate that answers correspond to actual questions and options
-        for (const [questionKey, selectedValue] of Object.entries(answers)) {
-            if (selectedValue === null || selectedValue === undefined) continue;
+        for (const [questionKey, answer] of Object.entries(answers)) {
+            if (answer === null || answer === undefined) continue;
+            
+            // Extract the option value (handle both object format {option: "A"} and string format "A")
+            const selectedValue = typeof answer === 'object' ? answer.option : answer;
+            
+            if (!selectedValue) continue;
             
             const questionIndex = parseInt(questionKey.replace('q', '')) - 1;
             const question = challenge.questions[questionIndex];
@@ -72,7 +77,7 @@ router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
                 return res.status(400).json({ message: `Invalid question: ${questionKey}` });
             }
 
-            const optionExists = question.checkBox.some(opt => opt.value === selectedValue);
+            const optionExists = question.checkBox.some(opt => opt.option === selectedValue || opt.value === selectedValue);
             if (!optionExists) {
                 return res.status(400).json({ message: `Invalid option for ${questionKey}` });
             }
@@ -87,21 +92,29 @@ router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
         await newVote.save();
 
         // Update vote counts for selected options
-        for (const [questionKey, selectedValue] of Object.entries(answers)) {
-            if (selectedValue === null || selectedValue === undefined) continue;
+        for (const [questionKey, answer] of Object.entries(answers)) {
+            if (answer === null || answer === undefined) continue;
+            
+            // Extract the option value (handle both object format {option: "A"} and string format "A")
+            const selectedValue = typeof answer === 'object' ? answer.option : answer;
+            
+            if (!selectedValue) continue;
             
             const questionIndex = parseInt(questionKey.replace('q', '')) - 1;
             await Challenge.updateOne(
                 {
                     _id: challengeId,
                     'questions._id': challenge.questions[questionIndex]._id,
-                    'questions.checkBox.value': selectedValue
+                    $or: [
+                        { 'questions.checkBox.option': selectedValue },
+                        { 'questions.checkBox.value': selectedValue }
+                    ]
                 },
                 {
                     $addToSet: { 'questions.$[].checkBox.$[option].vote': user }
                 },
                 {
-                    arrayFilters: [{ 'option.value': selectedValue }]
+                    arrayFilters: [{ $or: [{ 'option.option': selectedValue }, { 'option.value': selectedValue }] }]
                 }
             );
         }
