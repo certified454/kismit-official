@@ -14,6 +14,13 @@ const voteSchema = new mongoose.Schema({
     answers: {
         type: mongoose.Schema.Types.Mixed,
         required: true
+    },
+    score: {
+        type: Number,
+        default: 0
+    },
+    rank: {
+        type: Number
     }
 }, { timestamps: true });
 

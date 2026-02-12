@@ -65,6 +65,13 @@ const challengeSchema = new mongoose.Schema({
     voteCount: {
         type: Number,
         default: 0
+    },
+    correctAnswers: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null
+    },
+    answersPostedAt: {
+        type: Date
     }
 }, { timestamps: true });
 

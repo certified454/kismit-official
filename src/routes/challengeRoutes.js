@@ -187,4 +187,77 @@ router.get('/:challengeId', protectRoute, async (req, res) => {
     }
 })
 
+// Owner posts correct answers after challenge finished; compute scores and ranks
+router.put('/:challengeId/answers', protectRoute, ownerOnly, async (req, res) => {
+    const challengeId = req.params.challengeId;
+    const { correctAnswers } = req.body; // expected format: { q1: 'A', q2: 'B' }
+
+    try {
+        if (!correctAnswers || typeof correctAnswers !== 'object') {
+            return res.status(400).json({ message: 'correctAnswers object is required' });
+        }
+
+        const challenge = await Challenge.findById(challengeId);
+        if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
+
+        // Save correct answers on challenge
+        challenge.correctAnswers = correctAnswers;
+        challenge.answersPostedAt = new Date();
+        await challenge.save();
+
+        // Fetch all votes for this challenge
+        const votes = await Vote.find({ challenge: challengeId });
+
+        // Compute score for each vote
+        const scoreEntries = votes.map(vote => {
+            let score = 0;
+            try {
+                for (const [qKey, correctValue] of Object.entries(correctAnswers)) {
+                    const ans = vote.answers[qKey];
+                    if (ans === null || ans === undefined) continue;
+                    const selectedValue = typeof ans === 'object' ? ans.option : ans;
+                    if (!selectedValue) continue;
+                    if (String(selectedValue) === String(correctValue)) score += 20;
+                }
+            } catch (e) {
+                // ignore malformed vote answers
+            }
+            return { id: vote._id, score, createdAt: vote.createdAt };
+        });
+
+        // Sort by score desc then earliest submission (createdAt asc) as tiebreaker
+        scoreEntries.sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return new Date(a.createdAt) - new Date(b.createdAt);
+        });
+
+        // Assign ranks
+        const bulkOps = [];
+        for (let i = 0; i < scoreEntries.length; i++) {
+            const entry = scoreEntries[i];
+            const rank = i + 1;
+            bulkOps.push({
+                updateOne: {
+                    filter: { _id: entry.id },
+                    update: { $set: { score: entry.score, rank } }
+                }
+            });
+        }
+
+        if (bulkOps.length > 0) {
+            await Vote.bulkWrite(bulkOps);
+        }
+
+        // Emit socket event with top rankings
+        const top = scoreEntries.slice(0, 10);
+        const populatedTop = await Vote.find({ _id: { $in: top.map(t => t.id) } }).populate('user', 'username profilePicture');
+        req.app.get('io').emit('challenge:answersUpdated', { challengeId, top: populatedTop });
+
+        res.json({ message: 'Correct answers saved and scores computed', topCount: top.length });
+    } catch (error) {
+        console.error('Error posting answers:', error);
+        res.status(500).json({ message: 'Error posting answers', error: error.message });
+    }
+});
+
 export default router;

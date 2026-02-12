@@ -147,62 +147,175 @@ router.post('/challenge/:challengeId', protectRoute, async (req, res) => {
 })
 
 router.get('/challenge/:challengeId/votes', protectRoute, async (req, res) => {
-    
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const skip = (page - 1) * limit;
         const challengeId = req.params.challengeId;
 
+        const challenge = await Challenge.findById(challengeId);
+        if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
+
         const challengeObjectId = new mongoose.Types.ObjectId(challengeId);
-        const votes = await Vote.aggregate([
-            {
-                $match: { challenge: challengeObjectId }
-            },
-            {
-                $sort: { createdAt: -1 }
-            },
-            {
-                $skip: skip
-            },
-            {
-                $limit: limit
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'user',
-                    foreignField: '_id',
-                    as: 'user'
-                }
-            },
-            {
-                $unwind: '$user'
-            },
-            {
-                $project: {
-                    _id: 1,
-                    text: 1,
-                    createdAt: 1,
-                    user: {
-                        _id: '$user._id',
-                        username: '$user.username',
-                        profilePicture: '$user.profilePicture'
-                    }
+
+        const scoringMode = !!challenge.correctAnswers;
+
+        // Build leaderboard: if correct answers posted, sort by score desc, else earliest 3 submissions
+        let leaderboardPipeline = [
+            { $match: { challenge: challengeObjectId } }
+        ];
+
+        if (scoringMode) {
+            leaderboardPipeline.push({ $sort: { score: -1, createdAt: 1 } });
+        } else {
+            leaderboardPipeline.push({ $sort: { createdAt: 1 } });
+        }
+        leaderboardPipeline.push({ $limit: 3 });
+        leaderboardPipeline.push({
+            $lookup: {
+                from: 'users',
+                localField: 'user',
+                foreignField: '_id',
+                as: 'user'
+            }
+        }, { $unwind: '$user' }, {
+            $project: {
+                _id: 1,
+                answers: 1,
+                createdAt: 1,
+                score: 1,
+                rank: 1,
+                user: {
+                    _id: '$user._id',
+                    username: '$user.username',
+                    profilePicture: '$user.profilePicture'
                 }
             }
-        ])
-        const totalVotes = await Vote.countDocuments({challenge: challengeObjectId })
-        return res.send({ 
+        });
+
+        const leaderboard = await Vote.aggregate(leaderboardPipeline);
+        const leaderboardIds = leaderboard.map(v => v._id);
+
+        // Paginated votes excluding leaderboard entries
+        const votesPipeline = [
+            { $match: { challenge: challengeObjectId, _id: { $nin: leaderboardIds } } }
+        ];
+
+        if (scoringMode) {
+            votesPipeline.push({ $sort: { rank: 1, createdAt: 1 } });
+        } else {
+            votesPipeline.push({ $sort: { createdAt: -1 } });
+        }
+
+        votesPipeline.push({ $skip: skip }, { $limit: limit });
+        votesPipeline.push({
+            $lookup: {
+                from: 'users',
+                localField: 'user',
+                foreignField: '_id',
+                as: 'user'
+            }
+        }, { $unwind: '$user' }, {
+            $project: {
+                _id: 1,
+                answers: 1,
+                createdAt: 1,
+                score: 1,
+                rank: 1,
+                user: {
+                    _id: '$user._id',
+                    username: '$user.username',
+                    profilePicture: '$user.profilePicture'
+                }
+            }
+        });
+
+        const votes = await Vote.aggregate(votesPipeline);
+
+        const totalVotes = await Vote.countDocuments({ challenge: challengeObjectId });
+        return res.send({
+            leaderboard,
             votes,
             currentPage: page,
             totalVotes,
-            totalPages: Math.ceil(totalVotes / limit)
+            totalPages: Math.ceil(Math.max(totalVotes - leaderboardIds.length, 0) / limit)
         });
     } catch (error) {
-        console.error("Error retrieving votes:", error);
-        res.status(500).json({ message: "Error retrieving votes" });
+        console.error('Error retrieving votes:', error);
+        res.status(500).json({ message: 'Error retrieving votes' });
     }
 })
 
 export default router;
+
+// Public endpoint: full ranking excluding the top 3 leaderboard entries
+router.get('/challenge/:challengeId/ranking', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 0; // 0 => return all
+        const skip = limit > 0 ? (page - 1) * limit : 0;
+        const challengeId = req.params.challengeId;
+
+        const challenge = await Challenge.findById(challengeId);
+        if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
+
+        const challengeObjectId = new mongoose.Types.ObjectId(challengeId);
+        const scoringMode = !!challenge.correctAnswers;
+
+        // Determine the top 3 leaderboard IDs (same logic as votes route)
+        const topPipeline = [ { $match: { challenge: challengeObjectId } } ];
+        if (scoringMode) topPipeline.push({ $sort: { score: -1, createdAt: 1 } });
+        else topPipeline.push({ $sort: { createdAt: 1 } });
+        topPipeline.push({ $limit: 3 }, { $project: { _id: 1 } });
+        const top = await Vote.aggregate(topPipeline);
+        const topIds = top.map(t => t._id) || [];
+
+        // Build ranking pipeline excluding the top 3
+        const rankingPipeline = [
+            { $match: { challenge: challengeObjectId, _id: { $nin: topIds } } }
+        ];
+
+        if (scoringMode) rankingPipeline.push({ $sort: { score: -1, createdAt: 1 } });
+        else rankingPipeline.push({ $sort: { createdAt: 1 } });
+
+        if (limit > 0) rankingPipeline.push({ $skip: skip }, { $limit: limit });
+
+        rankingPipeline.push({
+            $lookup: {
+                from: 'users',
+                localField: 'user',
+                foreignField: '_id',
+                as: 'user'
+            }
+        }, { $unwind: '$user' }, {
+            $project: {
+                _id: 1,
+                answers: 1,
+                createdAt: 1,
+                score: 1,
+                rank: 1,
+                user: {
+                    _id: '$user._id',
+                    username: '$user.username',
+                    profilePicture: '$user.profilePicture'
+                }
+            }
+        });
+
+        const ranking = await Vote.aggregate(rankingPipeline);
+
+        const totalAll = await Vote.countDocuments({ challenge: challengeObjectId });
+        const totalExcludingTop = Math.max(totalAll - topIds.length, 0);
+
+        return res.json({
+            topExcludedCount: topIds.length,
+            total: totalExcludingTop,
+            page: page,
+            limit: limit,
+            ranking
+        });
+    } catch (error) {
+        console.error('Error fetching full ranking:', error);
+        res.status(500).json({ message: 'Error fetching full ranking' });
+    }
+});
