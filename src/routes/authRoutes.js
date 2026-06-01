@@ -1,15 +1,21 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import sgMail from "@sendgrid/mail";
+import nodemailer from "nodemailer";
+import sibTransport from "nodemailer-brevo-transport";
 import protectRoute from '../middleware/auth.middleware.js';
 import "dotenv/config";
 
 import User from "../modules/user.js";
 import cloudinary from "../lib/cloudinary.js";
+import nodemon from "nodemon";
 
 const router = express.Router();
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const transport = nodemailer.createTransport(
+  sibTransport({
+    apiKey: process.env.BREVO_API_KEY
+  })
+)
 
 const generateToken = (userId, isOwner) => {
   return jwt.sign({ userId, isOwner }, process.env.JWT_SECRET, { expiresIn: "15d" });
@@ -91,7 +97,7 @@ router.post("/register", async (req, res) => {
 
     const msg = {
       to: email,
-      from: process.env.EMAIL,
+      from: `"Kismet KSM App" <${process.env.EMAIL}>`,
       subject: "Email Verification",
       html: `
                 <!DOCTYPE html>
@@ -181,7 +187,7 @@ router.post("/register", async (req, res) => {
       console.log("Failed to create email message");
       return res.status(500).json({ message: "Failed to create email message" });
     }
-    await sgMail.send(msg);
+    await transport.sendMail(msg);
     console.log("Verification email sent to ", email);
 
     res.status(201).json({ 
@@ -298,7 +304,7 @@ router.post("/resend-code", async (req, res) => {
     await user.save();
     const msg = {
       to: email,
-      from: process.env.EMAIL,
+      from: `"Kismet KSM App" <${process.env.EMAIL}>`,
       subject: "Email Verification",
       html: `
                 <!DOCTYPE html>
@@ -383,7 +389,7 @@ router.post("/resend-code", async (req, res) => {
        `,
     }
     console.log("SendGrid message object", msg);
-    await sgMail.send(msg);
+    await transport.sendMail(msg);
     console.log("Verification email sent to ", email);
     res.status(200).json({
       message: `A new verification code has been sent to ${email}. Please check your email for the code.`,
@@ -411,7 +417,7 @@ router.post('/forgotten-password', async (req, res) => {
 
       const msg = {
         to: email,
-        from: process.env.EMAIL,
+        from: `"Kismet KSM App" <${process.env.EMAIL}>`,
         subject: 'Reset Password',
         html: `
               <Doctype html>
@@ -473,7 +479,7 @@ router.post('/forgotten-password', async (req, res) => {
               </html>
           `,
       }
-      await sgMail.send(msg);
+      await transport.sendMail(msg);
 
       console.log("Email sent");
       return res.status(200).json({ message: `Email sent to ${email}` });
@@ -570,7 +576,6 @@ router.delete('/:id', protectRoute, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    await user.deleteOne();
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     console.log("Error in delete user route", error);

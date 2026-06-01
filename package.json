@@ -31,6 +31,7 @@
     "mongoose": "^8.14.1",
     "multer": "^2.0.0",
     "nodemailer": "^7.0.2",
+    "nodemailer-brevo-transport": "^2.2.1",
     "socket.io": "^4.8.1",
     "zustand": "^5.0.4"
   },

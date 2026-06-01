@@ -42,8 +42,8 @@ router.post('/register', protectRoute, async (req, res) => {
                 profilePicture: populatedNews.user.profilePicture
             },
             description: populatedNews.description,
-            picture1: populatedNews.pictures1,
-            picture2: populatedNews.pictures2,
+            picture1: populatedNews.picture1,
+            picture2: populatedNews.picture2,
             likesCount: populatedNews.likesCount,
             unlikesCount: populatedNews.unlikesCount,
             createdAt: populatedNews.createdAt
