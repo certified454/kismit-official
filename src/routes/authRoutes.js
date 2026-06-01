@@ -12,7 +12,7 @@ import nodemon from "nodemon";
 const router = express.Router();
 
 const transport = nodemailer.createTransport(
-  sibTransport({
+  new sibTransport({
     apiKey: process.env.BREVO_API_KEY
   })
 )
