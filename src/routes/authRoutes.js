@@ -1,21 +1,40 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
-import sibTransport from "nodemailer-brevo-transport";
 import protectRoute from '../middleware/auth.middleware.js';
 import "dotenv/config";
 
 import User from "../modules/user.js";
 import cloudinary from "../lib/cloudinary.js";
-import nodemon from "nodemon";
 
 const router = express.Router();
 
-const transport = nodemailer.createTransport(
-  new sibTransport({
-    apiKey: process.env.BREVO_API_KEY
-  })
-)
+const sendEmailViaApi = async ({ to, subject, html }) => {
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "accept": "application/json",
+      "api-key": process.env.BREVO_API_KEY,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      sender: { 
+        name: "Kismet KSM App", 
+        // CRITICAL: Must be an email address matching your verified Brevo Sender list
+        email: process.env.SENDER_EMAIL || "kismetksm@gmail.com" 
+      },
+      to: [{ email: to }],
+      subject: subject,
+      htmlContent: html
+    })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    console.error("Brevo API Error Response:", data);
+    throw new Error(data.message || "Failed to send email via Brevo API");
+  }
+  return data;
+};
 
 const generateToken = (userId, isOwner) => {
   return jwt.sign({ userId, isOwner }, process.env.JWT_SECRET, { expiresIn: "15d" });
@@ -95,99 +114,89 @@ router.post("/register", async (req, res) => {
       await user.save();
     }
 
-    const msg = {
-      to: email,
-      from: `"Kismet KSM App" <${process.env.EMAIL}>`,
-      subject: "Email Verification",
-      html: `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Verify your email</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            background-color: #ffffff;
-                            color: #000;
-                            margin: 0;
-                            padding: 20px;
-                            line-height: 1.6;
-                        }
-                        .container {
-                            max-width: 600px;
-                            margin: 0 auto;
-                            padding: 30px;
-                            background-color: #f5f5f580;
-                            border-radius: 5px;
-                        }
-                        .footer {
-                            margin-top: 25px;
-                            padding: 10px;
-                            background-color: #f5f5f5;
-                            text-align: center;
-                            font-size: 12px;
-                            color: #777777;
-                            border-radius: 5px;
-                        }
-                        h1 {
-                            color: #4B0082;
-                            font-size: 24px;
-                            margin-bottom: 20px;
-                            text-align: center;
-                        }
-                        h2 {
-                            color: #333333;
-                            font-size: 40px;
-                            margin-bottom: 20px;
-                            text-align: center;
-                            margin-inline: 20px;
-                        }
-                        p {
-                            font-size: 16px;
-                            margin-bottom: 20px;
-                            color: #000000;
-                        }
-                        .note {
-                            font-size: 14px;
-                            color: #777777;
-                            margin-top: 25px;
-                        }
-                        .thank-you {
-                            font-size: 16px;
-                            margin-top: 20px;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <h1>New Account Registration</h1>
-                        <img src="https://github.com/certified454/My-portfolio/blob/326ea0bcae6116cb6b6058825fe4df08f3bec7c1/adaptive-icon.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
-                        <p>Hi ${username},</p>
-                        <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this code below:</p>
-                        <h2>${verificationCode}</h2>
-                        <p>This code will expire in 15 minutes.</p>
-                        <p class="note" >If you did not create an account, no further action is required. Feel free to ignore this email.</p>
-                        <p class="thank-you">Else, proceed to verify email.</p>
-                        <p>The Kismet Team KSM ${process.env.OWNER_EMAIL}</p>
-                    </div>
-                   <div class="footer">
-                        <p class="note" >If you have any questions, feel free to reach out to our support team. We're here to help!</p>
-                        <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can <a href="unsubscribe">unsubscribe</a> at any time.</p>
-                        <p style="text-align: center; font-size: 12px; color: #777777;">&copy; ${new Date().getFullYear()} Kismet. All rights reserved.</p>
-                    </div>
-                </body>
-                </html>
-       `,
-    }
-  
-    //if sending email fails, return the error
-    if (!msg) {
-      console.log("Failed to create email message");
-      return res.status(500).json({ message: "Failed to create email message" });
-    }
-    await transport.sendMail(msg);
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verify your email</title>
+          <style>
+              body {
+                  font-family: Arial, sans-serif;
+                  background-color: #ffffff;
+                  color: #000;
+                  margin: 0;
+                  padding: 20px;
+                  line-height: 1.6;
+              }
+              .container {
+                  max-width: 600px;
+                  margin: 0 auto;
+                  padding: 30px;
+                  background-color: #f5f5f580;
+                  border-radius: 5px;
+              }
+              .footer {
+                  margin-top: 25px;
+                  padding: 10px;
+                  background-color: #f5f5f5;
+                  text-align: center;
+                  font-size: 12px;
+                  color: #777777;
+                  border-radius: 5px;
+              }
+              h1 {
+                  color: #4B0082;
+                  font-size: 24px;
+                  margin-bottom: 20px;
+                  text-align: center;
+              }
+              h2 {
+                  color: #333333;
+                  font-size: 40px;
+                  margin-bottom: 20px;
+                  text-align: center;
+                  margin-inline: 20px;
+              }
+              p {
+                  font-size: 16px;
+                  margin-bottom: 20px;
+                  color: #000000;
+              }
+              .note {
+                  font-size: 14px;
+                  color: #777777;
+                  margin-top: 25px;
+              }
+              .thank-you {
+                  font-size: 16px;
+                  margin-top: 20px;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <h1>New Account Registration</h1>
+              <img src="https://github.com/certified454/My-portfolio/blob/326ea0bcae6116cb6b6058825fe4df08f3bec7c1/adaptive-icon.png" alt="Kismet Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
+              <p>Hi ${username},</p>
+              <p>Thank you for registering with us! To complete your registration, please verify your email by inputing this code below:</p>
+              <h2>${verificationCode}</h2>
+              <p>This code will expire in 15 minutes.</p>
+              <p class="note" >If you did not create an account, no further action is required. Feel free to ignore this email.</p>
+              <p class="thank-you">Else, proceed to verify email.</p>
+              <p>The Kismet Team KSM ${process.env.OWNER_EMAIL}</p>
+          </div>
+          <div class="footer">
+              <p class="note" >If you have any questions, feel free to reach out to our support team. We're here to help!</p>
+              <p style="text-align: center; font-size: 12px; color: #777777;">This email was sent to ${email}. If you no longer wish to receive emails from kismet, you can <a href="unsubscribe">unsubscribe</a> at any time.</p>
+              <p style="text-align: center; font-size: 12px; color: #777777;">&copy; ${new Date().getFullYear()} Kismet. All rights reserved.</p>
+          </div>
+      </body>
+      </html>
+,
+    `
+    await sendEmailViaApi({ to: email, subject: "Email Verification", html: htmlContent });
     console.log("Verification email sent to ", email);
 
     res.status(201).json({ 
@@ -302,11 +311,7 @@ router.post("/resend-code", async (req, res) => {
     user.verificationCode = newVerificationCode;
     user.verificationCodeExpires = newVerificationCodeExpires;
     await user.save();
-    const msg = {
-      to: email,
-      from: `"Kismet KSM App" <${process.env.EMAIL}>`,
-      subject: "Email Verification",
-      html: `
+    const htmlContent = `
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -386,10 +391,9 @@ router.post("/resend-code", async (req, res) => {
                     </div>
                 </body>
                 </html>
-       `,
-    }
-    console.log("SendGrid message object", msg);
-    await transport.sendMail(msg);
+       `
+
+    await sendEmailViaApi({ to: email, subject: "Email Verification", html: htmlContent });
     console.log("Verification email sent to ", email);
     res.status(200).json({
       message: `A new verification code has been sent to ${email}. Please check your email for the code.`,
@@ -415,11 +419,8 @@ router.post('/forgotten-password', async (req, res) => {
       const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
       const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
 
-      const msg = {
-        to: email,
-        from: `"Kismet KSM App" <${process.env.EMAIL}>`,
-        subject: 'Reset Password',
-        html: `
+      const htmlContent = 
+         `
               <Doctype html>
               <html>
               <head>
@@ -477,10 +478,8 @@ router.post('/forgotten-password', async (req, res) => {
                   </div>
               </body>
               </html>
-          `,
-      }
-      await transport.sendMail(msg);
-
+          `
+      await sendEmailViaApi({ to: email, subject: "Reset Password", html: htmlContent });
       console.log("Email sent");
       return res.status(200).json({ message: `Email sent to ${email}` });
     } catch (error) {
