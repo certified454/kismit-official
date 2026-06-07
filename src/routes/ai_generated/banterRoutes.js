@@ -2,10 +2,12 @@ import express from 'express';
 import { InferenceClient }  from "@huggingface/inference";
 import VideoGeneration from '../../modules/video.js';
 import ffmpeg from 'fluent-ffmpeg';
+import ffmpegStatic from 'ffmpeg-static';
 import fs from 'fs';
 import path from 'path';
 
 const router = express.Router();
+ffmpeg.setFfmpegPath(ffmpegStatic);
 const hf = new InferenceClient(process.env.HF_ACCESS_TOKEN);
 
 router.post('/video-video', async (req, res) => {
