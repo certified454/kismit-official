@@ -20,6 +20,7 @@ import matchRoutes from "./routes/matchRoutes.js";
 import newsRoutes from "./routes/newsRoutes.js";
 import tagsRoutes from "./routes/tagsRoutes.js";
 import contestRoutes from "./routes/contestRoutes.js";
+import banterRoutes from "./routes/ai_generated/banterRoutes.js";
 import { connectDB } from "./lib/db.js"
 
 const app = express();
@@ -53,6 +54,7 @@ app.use("/api/match", matchRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/tags", tagsRoutes);
 app.use("/api/contest", contestRoutes);
+app.use("/api/banter", banterRoutes);
 
 io.on('connection', (socket) => {
     console.log('New client connected', socket.id);

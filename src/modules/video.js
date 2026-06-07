@@ -7,12 +7,10 @@ const videoGenerationSchema = new mongoose.Schema({
     },
     prompt: {
         type: String,
-        required: true,
         default: ''
     },
     videoUrl: {
         type: String,
-        required: true,
         default: ''
     },
     status: {
