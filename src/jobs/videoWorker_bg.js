@@ -162,6 +162,7 @@ function downloadFile(url, destPath) {
 // HuggingFace image-to-image with model fallback chain
 // ─────────────────────────────────────────────────────────────
 const IMAGE_TO_IMAGE_MODELS = [
+  'stabilityai/stable-diffusion-xl-refiner-1.0',
   'timbrooks/instruct-pix2pix',
   'lllyasviel/sd-controlnet-canny',
 ];
