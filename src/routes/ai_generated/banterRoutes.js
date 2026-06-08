@@ -85,41 +85,58 @@ router.get('/status/:id', async (req, res) => {
 // Streams the final video file back to the client
 // Supports range requests so the video player can seek
 router.get('/stream/:filename', (req, res) => {
-  const filename  = path.basename(req.params.filename); // prevent path traversal
-  const filePath  = path.join(process.cwd(), 'temp', filename);
+  const filename = path.basename(req.params.filename); // prevent path traversal
+  const filePath = path.join(process.cwd(), 'temp', filename);
 
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Video not found' });
   }
 
-  const stat     = fs.statSync(filePath);
+  const stat = fs.statSync(filePath);
   const fileSize = stat.size;
-  const range    = req.headers.range;
+  const range = req.headers.range;
 
   if (range) {
-    // Handle range request — required for mobile video playback / seeking
-    const parts   = range.replace(/bytes=/, '').split('-');
-    const start   = parseInt(parts[0], 10);
-    const end     = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-    const chunkSize = end - start + 1;
+    // 1. Safely parse the range header
+    const parts = range.replace(/bytes=/, "").split("-");
+    const startPart = parts[0];
+    const endPart = parts[1];
+
+    const start = parseInt(startPart, 10);
+    const end = endPart ? parseInt(endPart, 10) : fileSize - 1;
+
+    // 2. Validation Guard: Ensure bounds are sane before creating the stream
+    if (isNaN(start) || isNaN(end) || start >= fileSize || end >= fileSize || start > end) {
+      res.writeHead(416, {
+        'Content-Range': `bytes */${fileSize}`
+      });
+      return res.end();
+    }
+
+    const chunkSize = (end - start) + 1;
+    const fileStream = fs.createReadStream(filePath, { start, end });
 
     res.writeHead(206, {
-      'Content-Range':  `bytes ${start}-${end}/${fileSize}`,
-      'Accept-Ranges':  'bytes',
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
       'Content-Length': chunkSize,
-      'Content-Type':   'video/mp4',
+      'Content-Type': 'video/mp4',
     });
 
-    fs.createReadStream(filePath, { start, end }).pipe(res);
+    fileStream.on('error', (streamErr) => {
+      console.error("[Stream Error] Error streaming file segment:", streamErr);
+      if (!res.headersSent) res.status(500).end();
+    });
+
+    fileStream.pipe(res);
 
   } else {
-    // Full file — no range header
+    // Full file streaming fallback
     res.writeHead(200, {
       'Content-Length': fileSize,
-      'Content-Type':   'video/mp4',
+      'Content-Type': 'video/mp4',
     });
     fs.createReadStream(filePath).pipe(res);
   }
 });
-
 export default router;
