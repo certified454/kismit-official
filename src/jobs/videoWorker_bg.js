@@ -167,29 +167,45 @@ const IMAGE_TO_IMAGE_MODELS = [
   'lllyasviel/sd-controlnet-canny',
 ];
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function runImageToImage(buffer, prompt, negativePrompt) {
+  const MAX_RETRIES = 3;
+
   for (const model of IMAGE_TO_IMAGE_MODELS) {
-    try {
-      const resp = await hf.imageToImage({
-        model,
-        inputs: buffer,
-        parameters: {
-          prompt,
-          negative_prompt: negativePrompt,
-          num_inference_steps: INFERENCE_STEPS,
-          image_guidance_scale: IMAGE_GUIDANCE,
-          guidance_scale: TEXT_GUIDANCE,
-        },
-      });
-      const arr = await resp.arrayBuffer();
-      return Buffer.from(arr);
-    } catch (err) {
-      console.warn(`[HF] ${model} failed: ${err.message} — trying next...`);
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        // Add a small 1.5-second break BEFORE making the request 
+        // This stops Hugging Face from flagging your loop as spam
+        await wait(1500);
+
+        const resp = await hf.imageToImage({
+          model,
+          inputs: buffer,
+          parameters: {
+            prompt,
+            negative_prompt: negativePrompt,
+            num_inference_steps: INFERENCE_STEPS,
+            image_guidance_scale: IMAGE_GUIDANCE,
+            guidance_scale: TEXT_GUIDANCE,
+          },
+        });
+        
+        const arr = await resp.arrayBuffer();
+        return Buffer.from(arr);
+
+      } catch (err) {
+        console.warn(`[HF] ${model} attempt ${attempt} failed: ${err.message}.`);
+        
+        if (attempt < MAX_RETRIES) {
+          console.log(`Free tier busy. Waiting 4 seconds before retrying this frame...`);
+          await wait(4000); // Wait longer on failure to let the public queue clear
+        }
+      }
     }
   }
-  throw new Error('All HuggingFace models unavailable');
+  throw new Error('All HuggingFace models unavailable after retries');
 }
-
 // ─────────────────────────────────────────────────────────────
 // MAIN JOB RUNNER
 // ─────────────────────────────────────────────────────────────
