@@ -1,5 +1,5 @@
 import Fuse from 'fuse.js';
-import { loadPlayerDB } from './initDatabase.js';
+import { loadPlayerDB } from './initDatabase.js'
 
 // ── Build Fuse.js search index once at startup ────────────────
 let _fuse = null;

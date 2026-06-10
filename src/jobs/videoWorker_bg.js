@@ -5,8 +5,8 @@ import http from 'http';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStatic from 'ffmpeg-static';
 import VideoGeneration from '../modules/video.js';
-import { identifyPlayerFromPrompt } from './playerMatcher.js';
-import { createCanvas, loadImage } from 'canvas';  // npm i canvas
+import { identifyPlayerFromPrompt } from '../lib/playermatcher.js';
+import { createCanvas, loadImage } from 'canvas';
 
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
