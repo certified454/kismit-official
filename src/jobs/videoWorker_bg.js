@@ -5,8 +5,8 @@ import http from 'http';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStatic from 'ffmpeg-static';
 import VideoGeneration from '../modules/video.js';
-import { identifyPlayerFromPrompt } from '../lib/playermatcher.js';
-import { createCanvas, loadImage } from 'canvas';  // npm i canvas
+import { identifyPlayerFromPrompt } from './playerMatcher.js';
+import sharp from 'sharp';  // npm i sharp — no system deps needed
 
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
@@ -99,16 +99,27 @@ async function buildReferenceDescriptor(photoUrl) {
   try {
     const tmpPath = path.join(process.cwd(), 'temp', `ref_${Date.now()}.jpg`);
     await downloadFile(photoUrl, tmpPath);
-    const img        = await loadImage(tmpPath);
-    const canvas     = createCanvas(img.width, img.height);
-    const ctx        = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
+
+    // Use sharp to get image dimensions and raw pixel data
+    const { data, info } = await sharp(tmpPath)
+      .resize(320, 320, { fit: 'inside' })  // resize for faster processing
+      .toFormat('jpeg')
+      .toBuffer({ resolveWithObject: true });
+
     fs.unlinkSync(tmpPath);
 
+    // Create a canvas-compatible object for face-api using the tensor directly
+    const tensor = faceapi.tf.tensor3d(
+      new Uint8Array(await sharp(data).raw().toBuffer()),
+      [info.height, info.width, info.channels]
+    );
+
     const detection = await faceapi
-      .detectSingleFace(canvas, new faceapi.TinyFaceDetectorOptions())
+      .detectSingleFace(tensor, new faceapi.TinyFaceDetectorOptions())
       .withFaceLandmarks()
       .withFaceDescriptor();
+
+    tensor.dispose();
 
     if (!detection) {
       console.warn('[FaceAPI] No face found in reference photo.');
@@ -126,17 +137,21 @@ async function buildReferenceDescriptor(photoUrl) {
 // Returns array of { x, y, width, height } or empty array
 async function detectTargetFaceInFrame(framePath, referenceDescriptor) {
   try {
-    const img    = await loadImage(framePath);
-    const canvas = createCanvas(img.width, img.height);
-    const ctx    = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
+    const { data, info } = await sharp(framePath)
+      .toFormat('jpeg')
+      .toBuffer({ resolveWithObject: true });
+
+    const tensor = faceapi.tf.tensor3d(
+      new Uint8Array(await sharp(data).raw().toBuffer()),
+      [info.height, info.width, info.channels]
+    );
 
     const detections = await faceapi
-      .detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions())
+      .detectAllFaces(tensor, new faceapi.TinyFaceDetectorOptions())
       .withFaceLandmarks()
       .withFaceDescriptors();
 
-    if (!detections || detections.length === 0) return [];
+    if (!detections || detections.length === 0) { tensor.dispose(); return []; }
 
     const matches = [];
     for (const det of detections) {
@@ -215,48 +230,63 @@ async function editPlayerInFrame(framePath, prompt, negativePrompt, referenceDes
 
   if (boxes.length === 0) {
     console.log('  [Edit] Target player not in this frame — keeping original');
-    return originalBuffer;   // ← player not in frame, return untouched
+    return originalBuffer;
   }
 
   console.log(`  [Edit] Player found at ${boxes.length} location(s) — editing selectively`);
 
-  // Load original image to canvas for compositing
-  const img        = await loadImage(framePath);
-  const canvas     = createCanvas(img.width, img.height);
-  const ctx        = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
+  // Get original image dimensions via sharp
+  const meta = await sharp(framePath).metadata();
+  const imgW  = meta.width;
+  const imgH  = meta.height;
+
+  // Start with the original frame as base
+  let compositeBase = sharp(framePath).toFormat('jpeg');
+  const overlays = [];
 
   for (const box of boxes) {
-    // Expand the bounding box downward to include body (feet area for shoe swap etc.)
-    // Face box height * 4 gives approximate head-to-feet region
-    const expandedX = Math.max(0, box.x - box.width * 0.3);
-    const expandedY = Math.max(0, box.y - box.height * 0.2);
-    const expandedW = Math.min(img.width  - expandedX, box.width  * 1.6);
-    const expandedH = Math.min(img.height - expandedY, box.height * 4.5);  // head to feet
+    // Expand box downward to cover body/feet (4.5x face height)
+    const expandedX = Math.max(0, Math.floor(box.x - box.width * 0.3));
+    const expandedY = Math.max(0, Math.floor(box.y - box.height * 0.2));
+    const expandedW = Math.min(imgW - expandedX, Math.ceil(box.width  * 1.6));
+    const expandedH = Math.min(imgH - expandedY, Math.ceil(box.height * 4.5));
 
-    // Crop the player region
-    const cropCanvas = createCanvas(expandedW, expandedH);
-    const cropCtx    = cropCanvas.getContext('2d');
-    cropCtx.drawImage(img, expandedX, expandedY, expandedW, expandedH, 0, 0, expandedW, expandedH);
-
-    const cropBuffer = cropCanvas.toBuffer('image/jpeg', { quality: 0.92 });
+    // Crop the player region using sharp — no canvas needed
+    const cropBuffer = await sharp(framePath)
+      .extract({ left: expandedX, top: expandedY, width: expandedW, height: expandedH })
+      .toFormat('jpeg')
+      .toBuffer();
 
     try {
-      // Transform just this crop on the GPU
+      // Transform just the player crop on the GPU
       const transformedBuffer = await transformFrameOnGPU(cropBuffer, prompt, negativePrompt);
-      const transformedImg    = await loadImage(transformedBuffer);
 
-      // Paste transformed crop back onto the full frame canvas
-      ctx.drawImage(transformedImg, 0, 0, expandedW, expandedH, expandedX, expandedY, expandedW, expandedH);
-      console.log(`  [Edit] ✓ Patch applied at (${Math.round(expandedX)}, ${Math.round(expandedY)})`);
+      // Resize transformed back to exact crop dimensions (GPU may resize output)
+      const resizedTransformed = await sharp(transformedBuffer)
+        .resize(expandedW, expandedH, { fit: 'fill' })
+        .toFormat('jpeg')
+        .toBuffer();
+
+      // Queue as overlay to composite back onto the original frame
+      overlays.push({ input: resizedTransformed, left: expandedX, top: expandedY });
+      console.log(`  [Edit] ✓ Patch queued at (${expandedX}, ${expandedY})`);
 
     } catch (gpuErr) {
-      console.warn(`  [Edit] GPU transform failed for patch — keeping original region:`, gpuErr.message);
-      // Original region stays untouched on canvas
+      console.warn(`  [Edit] GPU failed for patch — keeping original region:`, gpuErr.message);
     }
   }
 
-  return canvas.toBuffer('image/jpeg', { quality: 0.92 });
+  if (overlays.length === 0) {
+    return originalBuffer;
+  }
+
+  // Composite all transformed patches back onto the original frame in one pass
+  const result = await sharp(framePath)
+    .composite(overlays)
+    .toFormat('jpeg', { quality: 92 })
+    .toBuffer();
+
+  return result;
 }
 
 // ─────────────────────────────────────────────────────────────

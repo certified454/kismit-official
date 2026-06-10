@@ -20,7 +20,6 @@
     "@tensorflow/tfjs": "^4.22.0",
     "@vladmandic/face-api": "^1.7.15",
     "bcryptjs": "^3.0.2",
-    "canvas": "^3.2.3",
     "cloudinary": "^2.6.1",
     "cors": "^2.8.5",
     "cron": "^4.3.0",
@@ -39,6 +38,7 @@
     "multer": "^2.0.0",
     "nodemailer": "^8.0.10",
     "nodemailer-brevo-transport": "^2.2.1",
+    "sharp": "^0.35.0",
     "socket.io": "^4.8.1",
     "zustand": "^5.0.4"
   },
