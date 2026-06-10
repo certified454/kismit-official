@@ -17,6 +17,7 @@
   "dependencies": {
     "@huggingface/inference": "^4.13.18",
     "@sendgrid/mail": "^8.1.6",
+    "@tensorflow/tfjs": "^4.22.0",
     "@vladmandic/face-api": "^1.7.15",
     "bcryptjs": "^3.0.2",
     "canvas": "^3.2.3",

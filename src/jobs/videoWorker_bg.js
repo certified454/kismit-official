@@ -6,7 +6,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStatic from 'ffmpeg-static';
 import VideoGeneration from '../modules/video.js';
 import { identifyPlayerFromPrompt } from '../lib/playermatcher.js';
-import { createCanvas, loadImage } from 'canvas';
+import { createCanvas, loadImage } from 'canvas';  // npm i canvas
 
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
@@ -77,13 +77,19 @@ let referenceDescriptor = null;   // Float32Array — the target player's face e
 
 async function loadFaceApi() {
   if (faceApiLoaded) return;
-  faceapi = await import('@vladmandic/face-api');
+  // Import pure JS tensorflow BEFORE face-api to avoid tfjs-node native binary error
+  await import('@tensorflow/tfjs');
+  const faceApiModule = await import('@vladmandic/face-api/dist/face-api.esm-nobundle.js').catch(() =>
+    import('@vladmandic/face-api')
+  );
+  faceapi = faceApiModule.default || faceApiModule;
+
   const modelsPath = path.join(process.cwd(), 'public', 'models');
   await faceapi.nets.tinyFaceDetector.loadFromDisk(modelsPath);
   await faceapi.nets.faceLandmark68Net.loadFromDisk(modelsPath);
   await faceapi.nets.faceRecognitionNet.loadFromDisk(modelsPath);
   faceApiLoaded = true;
-  console.log('[FaceAPI] Models loaded.');
+  console.log('[FaceAPI] Models loaded (pure JS backend).');
 }
 
 // Build a face descriptor from the player's photo URL

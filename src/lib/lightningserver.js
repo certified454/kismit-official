@@ -12,16 +12,23 @@ app.get('/', (req, res) => {
   res.json({ status: 'online', message: 'GPU pipeline server is active!' });
 });
 
+// ── /api/transform ────────────────────────────────────────────
+// Receives a base64 image (can be a full frame OR a cropped
+// player region) and transforms it using the prompt.
+// When called from videoWorker, it receives a cropped region
+// of JUST the identified player — not the whole frame.
 app.post('/api/transform', async (req, res) => {
   try {
     const { imageBase64, prompt, negativePrompt } = req.body;
+
     if (!imageBase64) {
       return res.status(400).json({ success: false, error: 'Missing imageBase64' });
     }
 
     const buffer = Buffer.from(imageBase64, 'base64');
-    console.log(`\n[GPU] ⚡ Processing patch request...`);
+    console.log(`\n[GPU] ⚡ Processing with prompt: "${prompt}"`);
 
+    // Try FLUX first (better quality), fall back to SDXL refiner
     const MODELS = [
       'black-forest-labs/FLUX.1-schnell',
       'stabilityai/stable-diffusion-xl-refiner-1.0',
@@ -32,24 +39,16 @@ app.post('/api/transform', async (req, res) => {
 
     for (const model of MODELS) {
       try {
-        console.log(`[GPU] Trying engine model instance: ${model}`);
-        
-        // 💡 FLUX cannot take strength/guidance parameters or it completely crashes
-        const isFlux = model.includes('flux');
-        const parameters = isFlux 
-          ? { prompt: prompt || 'high quality, realistic' }
-          : {
-              prompt: prompt || 'high quality, realistic',
-              negative_prompt: negativePrompt || 'blurry, low quality',
-              num_inference_steps: 25,
-              guidance_scale: 7.5,
-              strength: 0.75,
-            };
-
+        console.log(`[GPU] Trying model: ${model}`);
         const response = await hf.imageToImage({
           model,
           inputs: buffer,
-          parameters: parameters
+          parameters: {
+            prompt:              prompt || 'high quality, realistic',
+            num_inference_steps: 25,
+            guidance_scale:      7.5,
+            strength:            0.75,
+          },
         });
 
         let arrayBuffer;
@@ -62,15 +61,19 @@ app.post('/api/transform', async (req, res) => {
         }
 
         outputBuffer = Buffer.from(arrayBuffer);
-        console.log(`[GPU] ✅ Success with Engine: ${model}`);
+        console.log(`[GPU] ✅ Success with ${model}`);
         break;
+
       } catch (modelErr) {
-        console.warn(`[GPU] ${model} interface bypassed: ${modelErr.message}`);
+        console.warn(`[GPU] ${model} failed: ${modelErr.message} — trying next...`);
         lastError = modelErr;
       }
     }
 
-    if (!outputBuffer) throw lastError || new Error('All models failed');
+    if (!outputBuffer) {
+      throw lastError || new Error('All models failed');
+    }
+
     res.json({ success: true, image: outputBuffer.toString('base64') });
 
   } catch (error) {
