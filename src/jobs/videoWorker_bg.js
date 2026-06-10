@@ -5,8 +5,8 @@ import http from 'http';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStatic from 'ffmpeg-static';
 import VideoGeneration from '../modules/video.js';
-import { identifyPlayerFromPrompt } from './playerMatcher.js';
-import sharp from 'sharp';  // npm i sharp — no system deps needed
+import { identifyPlayerFromPrompt } from '../lib/playermatcher.js';
+import sharp from 'sharp';
 
 ffmpeg.setFfmpegPath(ffmpegStatic);
 
