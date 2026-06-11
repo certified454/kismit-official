@@ -92,32 +92,61 @@ async function fetchMemeClip(searchQuery, destPath) {
   } catch { return null; }
 }
 
+// ── FIXED STITCH FUNCTION ───────────────────────────────────────────
+// Eliminates anullsrc and manual layout filters that trigger Exit Code 8
 function stitchVideos({ inputs, hasAudio, useMeme, finalPath }) {
   return new Promise((resolve, reject) => {
-    const filterGraph = [
-      `[0:v]scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT},setpts=PTS-STARTPTS[v0]`,
-      `[1:v]scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT},setpts=PTS-STARTPTS[v1]`,
-      `anullsrc=channel_layout=stereo:sample_rate=${SAMPLE_RATE}[silent_a1]`,
-    ];
-
-    let concatLine;
-    if (useMeme) {
-      filterGraph.push(`[2:v]scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT},setpts=PTS-STARTPTS[v2]`);
-      concatLine = hasAudio 
-        ? '[v0][0:a][v1][silent_a1][v2][2:a]concat=n=3:v=1:a=1[outv][outa]'
-        : '[v0],anullsrc=channel_layout=stereo:sample_rate=44100[silent_a0];[v0][silent_a0][v1][silent_a1][v2][2:a]concat=n=3:v=1:a=1[outv][outa]';
-    } else {
-      concatLine = hasAudio
-        ? '[v0][0:a][v1][silent_a1]concat=n=2:v=1:a=1[outv][outa]'
-        : '[v0],anullsrc=channel_layout=stereo:sample_rate=44100[silent_a0];[v0][silent_a0][v1][silent_a1]concat=n=2:v=1:a=1[outv][outa]';
-    }
-    filterGraph.push(concatLine);
-
     const cmd = ffmpeg();
     inputs.forEach((inp) => cmd.input(inp));
+
+    const filterGraph = [];
+    let segmentCount = inputs.length;
+
+    // Standardize scaling maps for all available input slots dynamically
+    for (let i = 0; i < segmentCount; i++) {
+      filterGraph.push(`[${i}:v]scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT},setpts=PTS-STARTPTS[v${i}]`);
+    }
+
+    // Safely structure video + audio bindings depending on input stream visibility
+    let concatString = '';
+    for (let i = 0; i < segmentCount; i++) {
+      concatString += `[v${i}]`;
+      
+      // Slot 0 = Original Video, Slot 1 = Processed Loop, Slot 2 = Meme
+      if (i === 0 && hasAudio) {
+        concatString += `[0:a]`;
+      } else if (i === 2 && useMeme) {
+        // Tenor links naturally have embedded tracking tracks
+        concatString += `[2:a]`;
+      } else {
+        // Fallback placeholder assignment to circumvent complex generated noise graphs
+        concatString += `[0:a]`; 
+      }
+    }
+
+    concatString += `concat=n=${segmentCount}:v=1:a=1[outv][outa]`;
+    filterGraph.push(concatString);
+
     cmd.complexFilter(filterGraph)
-       .outputOptions(['-map [outv]','-map [outa]','-c:v libx264','-pix_fmt yuv420p','-shortest'])
-       .output(finalPath).on('end', resolve).on('error', reject).run();
+       .outputOptions([
+         '-map [outv]',
+         '-map [outa]',
+         '-c:v libx264',
+         '-pix_fmt yuv420p',
+         '-c:a aac',
+         '-ar 44100',
+         '-shortest'
+       ])
+       .output(finalPath)
+       .on('end', () => {
+         console.log('✅ Final compilation succeeded seamlessly!');
+         resolve();
+       })
+       .on('error', (err) => {
+         console.error('❌ Stitch error generated:', err.message);
+         reject(err);
+       })
+       .run();
   });
 }
 
@@ -157,7 +186,6 @@ export async function runJob(jobId, opts = {}) {
 
       try {
         const originalBuffer = fs.readFileSync(framePath);
-        // Ship the base64 and the matched face photo straight to the GPU instance!
         const outBuffer = await transformFrameOnGPU(originalBuffer, additionalPrompt, itemsToRemove, matchedPlayer?.faceUrl);
         fs.writeFileSync(outPath, outBuffer);
       } catch (err) {

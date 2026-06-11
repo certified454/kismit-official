@@ -1,52 +1,52 @@
-import Fuse from 'fuse.js';
 import { loadPlayerDB } from './initDatabase.js';
 
-let _fuse = null;
-
-function getFuse() {
-  if (_fuse) return _fuse;
-  const players = loadPlayerDB();
-  
-  _fuse = new Fuse(players, {
-    keys: ['officialName', 'searchKeywords'],
-    threshold: 0.4, // Forgives typos or partial strings (like matching "Hakimi" out of "Achraf Hakimi")
-    includeScore: true,
-    minMatchCharLength: 3,
-  });
-  return _fuse;
+function normalizeString(str) {
+  return str
+    .toLowerCase()
+    .normalize('NFD')                 // Separates letters from accents (é -> e + ´)
+    .replace(/[\u0300-\u036f]/g, '')   // Strips the accent marks off
+    .replace(/[^a-z0-9\s]/g, '')       // Drops special characters
+    .trim();
 }
 
 export function identifyPlayerFromPrompt(promptText) {
   if (!promptText || !promptText.trim()) return null;
 
-  const fuse = getFuse();
-  const words = promptText.trim().split(/\s+/);
-  const chunks = [];
-
-  // Break prompt into search phrases ("Wear", "Hakimi", "Wear Hakimi")
-  for (let i = 0; i < words.length; i++) {
-    chunks.push(words[i]);                                       
-    if (i + 1 < words.length) chunks.push(`${words[i]} ${words[i+1]}`);           
-    if (i + 2 < words.length) chunks.push(`${words[i]} ${words[i+1]} ${words[i+2]}`); 
-  }
+  const cleanPrompt = normalizeString(promptText);
+  const players = loadPlayerDB();
 
   let bestMatch = null;
-  let bestScore = Infinity;
+  let highestScore = 0;
 
-  for (const chunk of chunks) {
-    const results = fuse.search(chunk);
-    if (results.length > 0 && results[0].score < bestScore) {
-      bestScore = results[0].score;
-      bestMatch = results[0].item;
+  for (const player of players) {
+    let currentScore = 0;
+
+    // Check individual keyword arrays (e.g. "mbappe", "kylian", "ryan")
+    if (player.searchKeywords && Array.isArray(player.searchKeywords)) {
+      for (const keyword of player.searchKeywords) {
+        if (cleanPrompt.includes(normalizeString(keyword))) {
+          currentScore += 2; // Strong keyword match weight
+        }
+      }
+    }
+
+    // Direct official name block check
+    const cleanOfficial = normalizeString(player.officialName || '');
+    if (cleanOfficial && cleanPrompt.includes(cleanOfficial)) {
+      currentScore += 5; // Multi-word precise phrase bonus
+    }
+
+    if (currentScore > highestScore) {
+      highestScore = currentScore;
+      bestMatch = player;
     }
   }
 
-  // If a strong fuzzy match is found directly against GitHub data, return it
-  if (bestMatch && bestScore < 0.4) {
-    console.log(`[PlayerMatch] 🎯 Match Found: "${promptText}" → ${bestMatch.officialName} (Score: ${bestScore.toFixed(3)})`);
+  if (bestMatch && highestScore > 0) {
+    console.log(`[PlayerMatch] 🎯 Match Found: "${promptText}" → ${bestMatch.officialName}`);
     return bestMatch;
   }
 
-  console.log(`[PlayerMatch] ❌ No match found in GitHub data for: "${promptText}"`);
+  console.log(`[PlayerMatch] ❌ No match found in local configurations for: "${promptText}"`);
   return null;
 }

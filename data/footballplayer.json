@@ -1,0 +1,302 @@
+[
+  {
+    "playerId": "fb_01",
+    "officialName": "Kylian Mbappé",
+    "searchKeywords": ["mbappe", "kylian", "mbappé", "kilyan", "kilian"],
+    "faceUrl": "https://tse3.mm.bing.net/th/id/OIP.A_Pgo5BVtOgQLnGc7a2KwgHaEK?r=0&cb=thfc1falcon2&rs=1&pid=ImgDetMain&o=7&rm=3"
+  },
+  {
+    "playerId": "fb_02",
+    "officialName": "Achraf Hakimi",
+    "searchKeywords": ["hakimi", "achraf", "ashraf", "akimi"],
+    "faceUrl": "https://www.bing.com/newtabredir?url=https%3A%2F%2Fe00-marca.uecdn.es%2Fassets%2Fmultimedia%2Fimagenes%2F2023%2F03%2F04%2F16779175377948.jpg"
+  },
+  {
+    "playerId": "fb_03",
+    "officialName": "Rayan Cherki",
+    "searchKeywords": ["cherki", "rayan", "ryan", "sherki"],
+    "faceUrl": "https://tse4.mm.bing.net/th/id/OIP.UpKv4Of8YDJ5ukqAh1knoQHaHa?r=0&cb=thfc1falcon2&rs=1&pid=ImgDetMain&o=7&rm=3"
+  },
+  {
+    "playerId": "fb_04",
+    "officialName": "Lionel Messi",
+    "searchKeywords": ["messi", "lionel", "leo", "leomessi"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Lionel-Messi-Argentina-2022-FIFA-World-Cup_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_05",
+    "officialName": "Cristiano Ronaldo",
+    "searchKeywords": ["ronaldo", "cristiano", "cr7", "siuu"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d7/Cristiano_Ronaldo_playing_for_Al_Nassr_FC_against_Persepolis%2C_September_2023_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_06",
+    "officialName": "Erling Haaland",
+    "searchKeywords": ["haaland", "erling", "haland", "hland"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/0/07/Erling_Haaland_2023_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_07",
+    "officialName": "Jude Bellingham",
+    "searchKeywords": ["bellingham", "jude", "jud", "belli"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Jude_Bellingham_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_08",
+    "officialName": "Vinícius Júnior",
+    "searchKeywords": ["vinicius", "vini", "junior", "vinicius jr", "vini jr"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Vinicius_Junior_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_09",
+    "officialName": "Kevin De Bruyne",
+    "searchKeywords": ["de bruyne", "kevin", "debruyne", "kdb"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/4/40/Kevin_De_Bruyne_2018_Russia.jpg"
+  },
+  {
+    "playerId": "fb_10",
+    "officialName": "Mohamed Salah",
+    "searchKeywords": ["salah", "mohamed", "mo salah", "mohammed"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Mohamed_Salah_2018.jpg"
+  },
+  {
+    "playerId": "fb_11",
+    "officialName": "Harry Kane",
+    "searchKeywords": ["kane", "harry", "harri"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Harry_Kane_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_12",
+    "officialName": "Robert Lewandowski",
+    "searchKeywords": ["lewandowski", "robert", "lewy", "lewandoski"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/0/03/Robert_Lewandowski_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_13",
+    "officialName": "Luka Modrić",
+    "searchKeywords": ["modric", "luka", "modric", "croatia"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e9/Luka_Modri%C3%A2_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_14",
+    "officialName": "Antoine Griezmann",
+    "searchKeywords": ["griezmann", "antoine", "grizmann", "grizou"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Antoine_Griezmann_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_15",
+    "officialName": "Bukayo Saka",
+    "searchKeywords": ["saka", "bukayo", "arsenal"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/5/52/Bukayo_Saka_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_16",
+    "officialName": "Rodri",
+    "searchKeywords": ["rodri", "rodrigo", "hernandez"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/8/80/Rodri_Hern%C3%A1ndez_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_17",
+    "officialName": "Martin Ødegaard",
+    "searchKeywords": ["odegaard", "martin", "odeqaard", "odegard"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Martin_%C3%98degaard_2023_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_18",
+    "officialName": "Phil Foden",
+    "searchKeywords": ["foden", "phil", "fodne"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Phil_Foden_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_19",
+    "officialName": "Bruno Fernandes",
+    "searchKeywords": ["fernandes", "bruno", "man utd"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Bruno_Fernandes_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_20",
+    "officialName": "Marcus Rashford",
+    "searchKeywords": ["rashford", "marcus", "rashy"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/3/30/Marcus_Rashford_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_21",
+    "officialName": "Heung-min Son",
+    "searchKeywords": ["son", "heung min", "tottenham"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c5/Son_Heung-min_2022.jpg"
+  },
+  {
+    "playerId": "fb_22",
+    "officialName": "Neymar Jr",
+    "searchKeywords": ["neymar", "ney", "junior", "neymar jr"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Bra-Cos_%20(1_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_23",
+    "officialName": "Karim Benzema",
+    "searchKeywords": ["benzema", "karim", "big benz"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Karim_Benzema_2023_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_24",
+    "officialName": "Jamal Musiala",
+    "searchKeywords": ["musiala", "jamal", "bayern"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/5/52/Jamal_Musiala_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_25",
+    "officialName": "Florian Wirtz",
+    "searchKeywords": ["wirtz", "florian", "leverkusen"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/4/41/Florian_Wirtz_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_26",
+    "officialName": "Lamine Yamal",
+    "searchKeywords": ["yamal", "lamine", "barca"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Lamine_Yamal_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_27",
+    "officialName": "Cole Palmer",
+    "searchKeywords": ["palmer", "cole", "chelsea", "cold palmer"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Cole_Palmer_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_28",
+    "officialName": "Rafael Leão",
+    "searchKeywords": ["leao", "rafael", "milan", "rafa"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/0/07/Rafael_Le%C3%A3o_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_29",
+    "officialName": "Lautaro Martínez",
+    "searchKeywords": ["martinez", "lautaro", "inter"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c5/Lautaro_Mart%C3%ADnez_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_30",
+    "officialName": "Victor Osimhen",
+    "searchKeywords": ["osimhen", "victor", "nigeria", "osimen"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3d/Victor_Osimhen_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_31",
+    "officialName": "Federico Valverde",
+    "searchKeywords": ["valverde", "federico", "fede"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Fede_Valverde_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_32",
+    "officialName": "Aurélien Tchouaméni",
+    "searchKeywords": ["tchouameni", "aurelien", "chouameni"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/2/22/Aur%C3%A9lien_Tchouam%C3%A9ni_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_33",
+    "officialName": "Eduardo Camavinga",
+    "searchKeywords": ["camavinga", "eduardo", "cama"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/2/23/Eduardo_Camavinga_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_34",
+    "officialName": "Virgil van Dijk",
+    "searchKeywords": ["van dijk", "virgil", "vandijk", "dijk"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Virgil_van_Dijk_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_35",
+    "officialName": "Ruben Dias",
+    "searchKeywords": ["dias", "ruben", "man city"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/8/87/R%C3%Baben_Dias_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_36",
+    "officialName": "Antonio Rüdiger",
+    "searchKeywords": ["rudiger", "antonio", "rudiger"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Antonio_R%C3%BCdiger_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_37",
+    "officialName": "Alfonso Davies",
+    "searchKeywords": ["davies", "alfonso", "alphonso"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Alphonso_Davies_2022_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_38",
+    "officialName": "Theo Hernández",
+    "searchKeywords": ["hernandez", "theo", "milan"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/0/01/Theo_Hern%C3%A1ndez_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_39",
+    "officialName": "Trent Alexander-Arnold",
+    "searchKeywords": ["alexander-arnold", "trent", "taa", "arnold"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/5/53/Trent_Alexander-Arnold_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_40",
+    "officialName": "Reece James",
+    "searchKeywords": ["james", "reece", "chelsea"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Reece_James_2021_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_41",
+    "officialName": "Alisson Becker",
+    "searchKeywords": ["alisson", "becker", "liverpool"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b3/Alisson_Becker_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_42",
+    "officialName": "Ederson",
+    "searchKeywords": ["ederson", "moraes", "man city"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/1/12/Ederson_Moraes_2018.jpg"
+  },
+  {
+    "playerId": "fb_43",
+    "officialName": "Thibaut Courtois",
+    "searchKeywords": ["courtois", "thibaut", "curtoa"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c4/Thibaut_Courtois_2018_Russia.jpg"
+  },
+  {
+    "playerId": "fb_44",
+    "officialName": "Marc-André ter Stegen",
+    "searchKeywords": ["ter stegen", "marc", "stegen"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d9/Marc-Andr%C3%A9_ter_Stegen_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_45",
+    "officialName": "Mike Maignan",
+    "searchKeywords": ["maignan", "mike", "milan"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Mike_Maignan_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_46",
+    "officialName": "Ilkay Gündoğan",
+    "searchKeywords": ["gundogan", "ilkay", "gundogan", "ilkay"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bf/%C4%B0lkay_G%C3%BCndo%C4%9fan_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_47",
+    "officialName": "Bernardo Silva",
+    "searchKeywords": ["silva", "bernardo", "man city"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/6/60/Bernardo_Silva_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_48",
+    "officialName": "Declan Rice",
+    "searchKeywords": ["rice", "declan", "arsenal"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/d/de/Declan_Rice_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_49",
+    "officialName": "Pedri",
+    "searchKeywords": ["pedri", "pedro", "gonzalez", "barca"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Pedri_2024_%20(cropped).jpg"
+  },
+  {
+    "playerId": "fb_50",
+    "officialName": "Gavi",
+    "searchKeywords": ["gavi", "pablo", "gavira", "barca"],
+    "faceUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Gavi_2022_%20(cropped).jpg"
+  }
+]
