@@ -4,6 +4,8 @@ import https from 'https';
 import http from 'http';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStatic from 'ffmpeg-static';
+import sharp from 'sharp';
+import { InferenceClient } from '@huggingface/inference';
 import VideoGeneration from '../modules/video.js';
 import { identifyPlayerFromPrompt } from '../lib/playermatcher.js';
 
@@ -14,6 +16,9 @@ const OUTPUT_WIDTH   = 1280;
 const OUTPUT_HEIGHT  = 720;
 const SAMPLE_RATE    = 44100;
 const LIGHTNING_URL  = process.env.LIGHTNING_GPU_URL;
+
+// Initialize serverless Hugging Face client for fast object detection bounding boxes
+const hf = new InferenceClient(process.env.HF_ACCESS_TOKEN || '');
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -27,6 +32,34 @@ async function probeAudio(videoPath) {
       resolve(!!stream);
     });
   });
+}
+
+// Automatically isolates the player on screen using serverless object detection
+async function detectPlayerBoundingBox(frameBuffer) {
+  try {
+    const response = await hf.objectDetection({
+      model: 'facebook/detr-resnet-50',
+      inputs: frameBuffer
+    });
+
+    const personMatches = response
+      .filter(item => item.label === 'person' && item.score > 0.4)
+      .sort((a, b) => b.score - a.score);
+
+    if (personMatches.length === 0) return null;
+
+    const { xmin, ymin, xmax, ymax } = personMatches[0].box;
+    
+    return {
+      left: Math.max(0, xmin),
+      top: Math.max(0, ymin),
+      width: Math.min(OUTPUT_WIDTH - xmin, xmax - xmin),
+      height: Math.min(OUTPUT_HEIGHT - ymin, ymax - ymin)
+    };
+  } catch (err) {
+    console.warn('[Detection Warning] Failed serverless bounding box lookup:', err.message);
+    return null;
+  }
 }
 
 // Directly forwards frames to the Lightning GPU Instance
@@ -61,80 +94,39 @@ async function transformFrameOnGPU(frameBuffer, prompt, negativePrompt, faceUrl)
   return Buffer.from(data.image, 'base64');
 }
 
-// function extractMemeQuery(promptText) {
-//   const STOP_WORDS = new Set(['a','an','the','and','or','but','in','on','at','to','for','of','with','by','from','is','it','this','that','make','let','have','do','will','would','should','can','get','just','add','replace','swap','change','put','use','same','like','video','clip','scene','player','person','show']);
-//   const MEME_SIGNALS = ['dance','dancing','celebration','celebrate','funny','reaction','fail','win','goal','save','jump','fall','laugh','cry','run','kick','spin','flip'];
-//   const words = promptText.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(Boolean);
-//   const signals  = words.filter((w) => MEME_SIGNALS.includes(w));
-//   const context  = words.filter((w) => !STOP_WORDS.has(w) && !MEME_SIGNALS.includes(w));
-//   const combined = [...new Set([...signals, ...context])].slice(0, 4);
-//   return combined.length > 0 ? combined.join(' ') : 'funny reaction';
-// }
-
-// async function fetchMemeClip(searchQuery, destPath) {
-//   const apiKey = process.env.TENOR_API_KEY;
-//   if (!apiKey) return null;
-//   try {
-//     const url  = `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(searchQuery)}&key=${apiKey}&limit=8&media_filter=mp4`;
-//     const resp = await fetch(url);
-//     const data = await resp.json();
-//     const mp4Url = data?.results?.[Math.floor(Math.random() * (data.results?.length || 1))]?.media_formats?.mp4?.url;
-//     if (!mp4Url) return null;
-    
-//     return new Promise((resolve, reject) => {
-//       const file = fs.createWriteStream(destPath);
-//       const protocol = mp4Url.startsWith('https') ? https : http;
-//       protocol.get(mp4Url, (res) => {
-//         res.pipe(file);
-//         file.on('finish', () => file.close(() => resolve(destPath)));
-//       }).on('error', reject);
-//     });
-//   } catch { return null; }
-// }
-
-// ── FIXED STITCH FUNCTION ───────────────────────────────────────────
-// Eliminates anullsrc and manual layout filters that trigger Exit Code 8
-function stitchVideos({ inputs, hasAudio, useMeme, finalPath }) {
+// Cleanly stitches original video with modified video sequential arrays
+function stitchVideos({ originalPath, modifiedPath, hasAudio, finalPath }) {
   return new Promise((resolve, reject) => {
     const cmd = ffmpeg();
-    inputs.forEach((inp) => cmd.input(inp));
+    
+    cmd.input(originalPath);
+    cmd.input(modifiedPath);
 
-    const filterGraph = [];
-    let segmentCount = inputs.length;
+    const filterGraph = [
+      `[0:v]scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT},setpts=PTS-STARTPTS[v0]`,
+      `[1:v]scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT},setpts=PTS-STARTPTS[v1]`
+    ];
 
-    // Standardize scaling maps for all available input slots dynamically
-    for (let i = 0; i < segmentCount; i++) {
-      filterGraph.push(`[${i}:v]scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT},setpts=PTS-STARTPTS[v${i}]`);
+    if (hasAudio) {
+      // Clean link mapping: maps video segments sequentially, using input 0's native audio line
+      filterGraph.push(`[v0][v1]concat=n=2:v=1:a=0[outv]`);
+      cmd.complexFilter(filterGraph);
+      cmd.outputOptions([
+        '-map [outv]',
+        '-map 0:a', // Directly pull unchanged clean audio tracking from source clip
+        '-c:a aac',
+        '-ar 44100'
+      ]);
+    } else {
+      // Fallback if uploaded file has no audio footprint
+      filterGraph.push(`[v0][v1]concat=n=2:v=1:a=0[outv]`);
+      cmd.complexFilter(filterGraph);
+      cmd.outputOptions(['-map [outv]']);
     }
 
-    // Safely structure video + audio bindings depending on input stream visibility
-    let concatString = '';
-    for (let i = 0; i < segmentCount; i++) {
-      concatString += `[v${i}]`;
-      
-      // Slot 0 = Original Video, Slot 1 = Processed Loop, Slot 2 = Meme
-      if (i === 0 && hasAudio) {
-        concatString += `[0:a]`;
-      } else if (i === 2 && useMeme) {
-        // Tenor links naturally have embedded tracking tracks
-        concatString += `[2:a]`;
-      } else {
-        // Fallback placeholder assignment to circumvent complex generated noise graphs
-        concatString += `[0:a]`; 
-      }
-    }
-
-    concatString += `concat=n=${segmentCount}:v=1:a=1[outv][outa]`;
-    filterGraph.push(concatString);
-
-    cmd.complexFilter(filterGraph)
-       .outputOptions([
-         '-map [outv]',
-         '-map [outa]',
+    cmd.outputOptions([
          '-c:v libx264',
          '-pix_fmt yuv420p',
-         '-c:a aac',
-         '-ar 44100',
          '-shortest'
        ])
        .output(finalPath)
@@ -186,9 +178,52 @@ export async function runJob(jobId, opts = {}) {
 
       try {
         const originalBuffer = fs.readFileSync(framePath);
-        const outBuffer = await transformFrameOnGPU(originalBuffer, additionalPrompt, itemsToRemove, matchedPlayer?.faceUrl);
-        fs.writeFileSync(outPath, outBuffer);
+        let bufferToTransform = originalBuffer;
+        let boundingBox = null;
+
+        if (matchedPlayer) {
+          boundingBox = await detectPlayerBoundingBox(originalBuffer);
+        }
+
+        if (boundingBox) {
+          bufferToTransform = await sharp(originalBuffer)
+            .extract({
+              left: Math.round(boundingBox.left),
+              top: Math.round(boundingBox.top),
+              width: Math.round(boundingBox.width),
+              height: Math.round(boundingBox.height)
+            })
+            .toBuffer();
+          console.log(`[Job:${jobId}] Frame ${i}: Cropped target zone successfully.`);
+        }
+
+        let transformedCropBuffer = await transformFrameOnGPU(
+          bufferToTransform, 
+          additionalPrompt, 
+          itemsToRemove, 
+          matchedPlayer?.faceUrl
+        );
+
+        if (boundingBox) {
+          const resizedCrop = await sharp(transformedCropBuffer)
+            .resize(Math.round(boundingBox.width), Math.round(boundingBox.height))
+            .toBuffer();
+
+          bufferToTransform = await sharp(originalBuffer)
+            .composite([{
+              input: resizedCrop,
+              top: Math.round(boundingBox.top),
+              left: Math.round(boundingBox.left)
+            }])
+            .toBuffer();
+            
+          fs.writeFileSync(outPath, bufferToTransform);
+        } else {
+          fs.writeFileSync(outPath, transformedCropBuffer);
+        }
+
       } catch (err) {
+        console.error(`⚠️ Frame ${frameFiles[i]} substitution error:`, err.message);
         fs.copyFileSync(framePath, outPath);
       }
     }
@@ -200,24 +235,22 @@ export async function runJob(jobId, opts = {}) {
         .output(modifiedClip).on('end', resolve).on('error', reject).run();
     });
 
-    let memeClipPath = null;
-    if (hasPrompt) {
-      memeClipPath = await fetchMemeClip(extractMemeQuery(additionalPrompt), path.join(tempDir, `meme_${jobId}.mp4`));
-    }
-
     const finalPath = path.join(process.cwd(), 'temp', `final_${jobId}.mp4`);
     const hasAudio  = await probeAudio(uploadedPath);
-    const useMeme   = !!(memeClipPath && fs.existsSync(memeClipPath));
 
-    const stitchInputs = [uploadedPath, modifiedClip];
-    if (useMeme) stitchInputs.push(memeClipPath);
-
-    await stitchVideos({ inputs: stitchInputs, hasAudio, useMeme, finalPath });
+    // Call updated simple stitch script
+    await stitchVideos({ 
+      originalPath: uploadedPath, 
+      modifiedPath: modifiedClip, 
+      hasAudio, 
+      finalPath 
+    });
 
     await VideoGeneration.findByIdAndUpdate(jobId, { status: 'completed', videoUrl: finalPath, updatedAt: new Date() });
     return finalPath;
 
   } catch (error) {
+    console.error("Fatal Worker Loop Error:", error.message);
     await VideoGeneration.findByIdAndUpdate(jobId, { status: 'failed', updatedAt: new Date() });
     throw error;
   }

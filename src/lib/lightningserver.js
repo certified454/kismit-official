@@ -44,7 +44,7 @@ app.post('/api/transform', async (req, res) => {
           model,
           inputs: buffer,
           parameters: {
-            prompt:              prompt || 'high quality, realistic',
+            prompt: prompt || 'high quality, realistic',
             num_inference_steps: 25,
             guidance_scale:      7.5,
             strength:            0.75,
