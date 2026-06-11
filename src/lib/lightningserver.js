@@ -63,9 +63,9 @@ app.post('/api/transform', async (req, res) => {
         outputBuffer = Buffer.from(arrayBuffer);
         console.log(`[GPU] ✅ Success with ${model}`);
         break;
-
+        
       } catch (modelErr) {
-        console.warn(`[GPU] ${model} failed: ${modelErr.message} — trying next...`);
+        console.error(`[GPU] ${model} failed: ${modelErr.message} — trying next...`);
         lastError = modelErr;
       }
     }

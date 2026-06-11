@@ -6,7 +6,7 @@ let _playerCache = null;
 // Clean out the old GitHub function so it doesn't try to connect to dead endpoints
 export async function bulkSeedFootballDatabase() {
   console.log('📦 [DB] Local database tracking initialized. Using verified offline dataset.');
-  const dbPath = path.join(process.cwd(), 'data', 'footballers.json');
+  const dbPath = path.join(process.cwd(), 'data', 'footballplayer.json');
   
   if (!fs.existsSync(dbPath)) {
     const dataDir = path.dirname(dbPath);
@@ -19,7 +19,7 @@ export async function bulkSeedFootballDatabase() {
 export function loadPlayerDB() {
   if (_playerCache) return _playerCache;
   
-  const dbPath = path.join(process.cwd(), 'data', 'footballers.json');
+  const dbPath = path.join(process.cwd(), 'data', 'footballplayer.json');
   if (!fs.existsSync(dbPath)) return [];
   
   try {

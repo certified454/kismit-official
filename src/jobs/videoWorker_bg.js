@@ -61,36 +61,36 @@ async function transformFrameOnGPU(frameBuffer, prompt, negativePrompt, faceUrl)
   return Buffer.from(data.image, 'base64');
 }
 
-function extractMemeQuery(promptText) {
-  const STOP_WORDS = new Set(['a','an','the','and','or','but','in','on','at','to','for','of','with','by','from','is','it','this','that','make','let','have','do','will','would','should','can','get','just','add','replace','swap','change','put','use','same','like','video','clip','scene','player','person','show']);
-  const MEME_SIGNALS = ['dance','dancing','celebration','celebrate','funny','reaction','fail','win','goal','save','jump','fall','laugh','cry','run','kick','spin','flip'];
-  const words = promptText.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(Boolean);
-  const signals  = words.filter((w) => MEME_SIGNALS.includes(w));
-  const context  = words.filter((w) => !STOP_WORDS.has(w) && !MEME_SIGNALS.includes(w));
-  const combined = [...new Set([...signals, ...context])].slice(0, 4);
-  return combined.length > 0 ? combined.join(' ') : 'funny reaction';
-}
+// function extractMemeQuery(promptText) {
+//   const STOP_WORDS = new Set(['a','an','the','and','or','but','in','on','at','to','for','of','with','by','from','is','it','this','that','make','let','have','do','will','would','should','can','get','just','add','replace','swap','change','put','use','same','like','video','clip','scene','player','person','show']);
+//   const MEME_SIGNALS = ['dance','dancing','celebration','celebrate','funny','reaction','fail','win','goal','save','jump','fall','laugh','cry','run','kick','spin','flip'];
+//   const words = promptText.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(Boolean);
+//   const signals  = words.filter((w) => MEME_SIGNALS.includes(w));
+//   const context  = words.filter((w) => !STOP_WORDS.has(w) && !MEME_SIGNALS.includes(w));
+//   const combined = [...new Set([...signals, ...context])].slice(0, 4);
+//   return combined.length > 0 ? combined.join(' ') : 'funny reaction';
+// }
 
-async function fetchMemeClip(searchQuery, destPath) {
-  const apiKey = process.env.TENOR_API_KEY;
-  if (!apiKey) return null;
-  try {
-    const url  = `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(searchQuery)}&key=${apiKey}&limit=8&media_filter=mp4`;
-    const resp = await fetch(url);
-    const data = await resp.json();
-    const mp4Url = data?.results?.[Math.floor(Math.random() * (data.results?.length || 1))]?.media_formats?.mp4?.url;
-    if (!mp4Url) return null;
+// async function fetchMemeClip(searchQuery, destPath) {
+//   const apiKey = process.env.TENOR_API_KEY;
+//   if (!apiKey) return null;
+//   try {
+//     const url  = `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(searchQuery)}&key=${apiKey}&limit=8&media_filter=mp4`;
+//     const resp = await fetch(url);
+//     const data = await resp.json();
+//     const mp4Url = data?.results?.[Math.floor(Math.random() * (data.results?.length || 1))]?.media_formats?.mp4?.url;
+//     if (!mp4Url) return null;
     
-    return new Promise((resolve, reject) => {
-      const file = fs.createWriteStream(destPath);
-      const protocol = mp4Url.startsWith('https') ? https : http;
-      protocol.get(mp4Url, (res) => {
-        res.pipe(file);
-        file.on('finish', () => file.close(() => resolve(destPath)));
-      }).on('error', reject);
-    });
-  } catch { return null; }
-}
+//     return new Promise((resolve, reject) => {
+//       const file = fs.createWriteStream(destPath);
+//       const protocol = mp4Url.startsWith('https') ? https : http;
+//       protocol.get(mp4Url, (res) => {
+//         res.pipe(file);
+//         file.on('finish', () => file.close(() => resolve(destPath)));
+//       }).on('error', reject);
+//     });
+//   } catch { return null; }
+// }
 
 // ── FIXED STITCH FUNCTION ───────────────────────────────────────────
 // Eliminates anullsrc and manual layout filters that trigger Exit Code 8
