@@ -1,11 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import https from 'https';
-import http from 'http';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStatic from 'ffmpeg-static';
 import sharp from 'sharp';
-import { InferenceClient } from '@huggingface/inference';
 import VideoGeneration from '../modules/video.js';
 import { identifyPlayerFromPrompt } from '../lib/playermatcher.js';
 
@@ -14,11 +11,7 @@ ffmpeg.setFfmpegPath(ffmpegStatic);
 const EXTRACT_FPS    = 1;
 const OUTPUT_WIDTH   = 1280;
 const OUTPUT_HEIGHT  = 720;
-const SAMPLE_RATE    = 44100;
-const LIGHTNING_URL  = process.env.LIGHTNING_URL;
-
-// Initialize serverless Hugging Face client for fast object detection bounding boxes
-const hf = new InferenceClient(process.env.HF_ACCESS_TOKEN || '');
+const LIGHTNING_URL  = process.env.LIGHTNING_URL ;
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -34,38 +27,10 @@ async function probeAudio(videoPath) {
   });
 }
 
-// Automatically isolates the player on screen using serverless object detection
-async function detectPlayerBoundingBox(frameBuffer) {
-  try {
-    const response = await hf.objectDetection({
-      model: 'facebook/detr-resnet-50',
-      inputs: frameBuffer
-    });
-
-    const personMatches = response
-      .filter(item => item.label === 'person' && item.score > 0.4)
-      .sort((a, b) => b.score - a.score);
-
-    if (personMatches.length === 0) return null;
-
-    const { xmin, ymin, xmax, ymax } = personMatches[0].box;
-    
-    return {
-      left: Math.max(0, xmin),
-      top: Math.max(0, ymin),
-      width: Math.min(OUTPUT_WIDTH - xmin, xmax - xmin),
-      height: Math.min(OUTPUT_HEIGHT - ymin, ymax - ymin)
-    };
-  } catch (err) {
-    console.warn('[Detection Warning] Failed serverless bounding box lookup:', err.message);
-    return null;
-  }
-}
-
-// Directly forwards frames to the Lightning GPU Instance
+// Forwards raw frame buffers to your private Lightning GPU Instance
 async function transformFrameOnGPU(frameBuffer, prompt, negativePrompt, faceUrl) {
   if (!LIGHTNING_URL) {
-    throw new Error('LIGHTNING_URL not set in environment variables');
+    throw new Error('LIGHTNING_URL  not set in environment variables');
   }
 
   const imageBase64 = frameBuffer.toString('base64');
@@ -88,10 +53,14 @@ async function transformFrameOnGPU(frameBuffer, prompt, negativePrompt, faceUrl)
 
   const data = await response.json();
   if (!data.success || !data.image) {
-    throw new Error(data.error || 'GPU server returned no image');
+    throw new Error(data.error || 'GPU server returned no image assets');
   }
 
-  return Buffer.from(data.image, 'base64');
+  // Returns both the transformed buffer AND any bounding box coordinates computed on the GPU
+  return {
+    transformedBuffer: Buffer.from(data.image, 'base64'),
+    boundingBox: data.boundingBox || null
+  };
 }
 
 // Cleanly stitches original video with modified video sequential arrays
@@ -108,7 +77,6 @@ function stitchVideos({ originalPath, modifiedPath, hasAudio, finalPath }) {
     ];
 
     if (hasAudio) {
-      // Clean link mapping: maps video segments sequentially, using input 0's native audio line
       filterGraph.push(`[v0][v1]concat=n=2:v=1:a=0[outv]`);
       cmd.complexFilter(filterGraph);
       cmd.outputOptions([
@@ -118,7 +86,6 @@ function stitchVideos({ originalPath, modifiedPath, hasAudio, finalPath }) {
         '-ar 44100'
       ]);
     } else {
-      // Fallback if uploaded file has no audio footprint
       filterGraph.push(`[v0][v1]concat=n=2:v=1:a=0[outv]`);
       cmd.complexFilter(filterGraph);
       cmd.outputOptions(['-map [outv]']);
@@ -162,7 +129,12 @@ export async function runJob(jobId, opts = {}) {
 
     console.log(`[Job:${jobId}] Extracting frames...`);
     await new Promise((resolve, reject) => {
-      ffmpeg(uploadedPath).outputOptions(['-vf', `fps=${EXTRACT_FPS}`]).output(path.join(framesDir, 'frame_%04d.jpg')).on('end', resolve).on('error', reject).run();
+      ffmpeg(uploadedPath)
+        .outputOptions(['-vf', `fps=${EXTRACT_FPS}`])
+        .output(path.join(framesDir, 'frame_%04d.jpg'))
+        .on('end', resolve)
+        .on('error', reject)
+        .run();
     });
 
     const frameFiles = fs.readdirSync(framesDir).filter((f) => f.endsWith('.jpg')).sort();
@@ -178,52 +150,47 @@ export async function runJob(jobId, opts = {}) {
 
       try {
         const originalBuffer = fs.readFileSync(framePath);
-        let bufferToTransform = originalBuffer;
-        let boundingBox = null;
 
-        if (matchedPlayer) {
-          boundingBox = await detectPlayerBoundingBox(originalBuffer);
-        }
-
-        if (boundingBox) {
-          bufferToTransform = await sharp(originalBuffer)
-            .extract({
-              left: Math.round(boundingBox.left),
-              top: Math.round(boundingBox.top),
-              width: Math.round(boundingBox.width),
-              height: Math.round(boundingBox.height)
-            })
-            .toBuffer();
-          console.log(`[Job:${jobId}] Frame ${i}: Cropped target zone successfully.`);
-        }
-
-        let transformedCropBuffer = await transformFrameOnGPU(
-          bufferToTransform, 
+        // Send full frame once directly to your private, high-speed GPU instance
+        const { transformedBuffer, boundingBox } = await transformFrameOnGPU(
+          originalBuffer, 
           additionalPrompt, 
           itemsToRemove, 
           matchedPlayer?.faceUrl
         );
 
+        // If your private server isolated a clean bounding box, use sharp to merge it cleanly
         if (boundingBox) {
-          const resizedCrop = await sharp(transformedCropBuffer)
-            .resize(Math.round(boundingBox.width), Math.round(boundingBox.height))
-            .toBuffer();
+          const { xmin, ymin, xmax, ymax } = boundingBox;
+          const width = Math.round(xmax - xmin);
+          const height = Math.round(ymax - ymin);
 
-          bufferToTransform = await sharp(originalBuffer)
-            .composite([{
-              input: resizedCrop,
-              top: Math.round(boundingBox.top),
-              left: Math.round(boundingBox.left)
-            }])
-            .toBuffer();
-            
-          fs.writeFileSync(outPath, bufferToTransform);
-        } else {
-          fs.writeFileSync(outPath, transformedCropBuffer);
+          // Ensure box has valid dimensions before attempting composition
+          if (width > 10 && height > 10) {
+            const resizedCrop = await sharp(transformedBuffer)
+              .resize(width, height)
+              .toBuffer();
+
+            const compositedFrame = await sharp(originalBuffer)
+              .composite([{
+                input: resizedCrop,
+                top: Math.round(Math.max(0, ymin)),
+                left: Math.round(Math.max(0, xmin))
+              }])
+              .toBuffer();
+
+            fs.writeFileSync(outPath, compositedFrame);
+            console.log(`[Job:${jobId}] Frame ${i}: Composited target zone flawlessly via Lightning coordinates.`);
+            continue;
+          }
         }
 
+        // Default Fallback: Write full frame if no clear box bounding metrics returned
+        fs.writeFileSync(outPath, transformedBuffer);
+
       } catch (err) {
-        console.error(`⚠️ Frame ${frameFiles[i]} substitution error:`, err.message);
+        console.error(`⚠️ Frame ${frameFiles[i]} processing error:`, err.message);
+        // Safely fall back to the original image so the video compile step doesn't fail
         fs.copyFileSync(framePath, outPath);
       }
     }
@@ -231,14 +198,14 @@ export async function runJob(jobId, opts = {}) {
     const modifiedClip = path.join(tempDir, `modified_${jobId}.mp4`);
     await new Promise((resolve, reject) => {
       ffmpeg().input(path.join(modifiedFramesDir, 'mod_frame_%04d.jpg')).inputOptions([`-framerate ${EXTRACT_FPS}`])
-        .outputOptions(['-c:v libx264','-pix_fmt yuv420p',`-vf scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT}`])
+        .outputOptions(['-c:v libx264', '-pix_fmt yuv420p', `-vf scale=${OUTPUT_WIDTH}:${OUTPUT_HEIGHT}`])
         .output(modifiedClip).on('end', resolve).on('error', reject).run();
     });
 
     const finalPath = path.join(process.cwd(), 'temp', `final_${jobId}.mp4`);
     const hasAudio  = await probeAudio(uploadedPath);
 
-    // Call updated simple stitch script
+    // Call updated simple stitch script to combine the original layout with the edits
     await stitchVideos({ 
       originalPath: uploadedPath, 
       modifiedPath: modifiedClip, 
