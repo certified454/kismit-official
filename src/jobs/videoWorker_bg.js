@@ -15,7 +15,7 @@ const EXTRACT_FPS    = 1;
 const OUTPUT_WIDTH   = 1280;
 const OUTPUT_HEIGHT  = 720;
 const SAMPLE_RATE    = 44100;
-const LIGHTNING_URL  = process.env.LIGHTNING_GPU_URL;
+const LIGHTNING_URL  = process.env.LIGHTNING_URL;
 
 // Initialize serverless Hugging Face client for fast object detection bounding boxes
 const hf = new InferenceClient(process.env.HF_ACCESS_TOKEN || '');
@@ -65,7 +65,7 @@ async function detectPlayerBoundingBox(frameBuffer) {
 // Directly forwards frames to the Lightning GPU Instance
 async function transformFrameOnGPU(frameBuffer, prompt, negativePrompt, faceUrl) {
   if (!LIGHTNING_URL) {
-    throw new Error('LIGHTNING_GPU_URL not set in environment variables');
+    throw new Error('LIGHTNING_URL not set in environment variables');
   }
 
   const imageBase64 = frameBuffer.toString('base64');
