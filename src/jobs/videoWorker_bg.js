@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import FormData from 'form-data';
+import axios from 'axios'; // 👈 Swapped out native fetch for safe streaming
 import VideoGeneration from '../modules/video.js';
 
 const LIGHTNING_URL = process.env.LIGHTNING_URL;
@@ -14,67 +15,55 @@ export async function runJob(jobId, opts = {}) {
 
   const tempDir = path.join(process.cwd(), 'temp');
   ensureDir(tempDir);
-
   const finalPath = path.join(tempDir, `final_${jobId}.mp4`);
 
   try {
-    // 1. Mark status as processing inside the database matrix
     await VideoGeneration.findByIdAndUpdate(jobId, { status: 'processing', updatedAt: new Date() });
-    console.log(`[Job:${jobId}] Starting direct video tensor swap optimization...`);
+    console.log(`[Job:${jobId}] Launching streaming pipeline optimization...`);
 
-    if (!LIGHTNING_URL) {
-      throw new Error('LIGHTNING_URL environment variable is not configured in your .env profile');
-    }
+    if (!LIGHTNING_URL) throw new Error('LIGHTNING_URL environment variable is missing');
 
-    if (!fs.existsSync(uploadedPath)) {
-      throw new Error(`Target upload file sequence not found at path: ${uploadedPath}`);
-    }
-
-    // 2. Prepare Multipart Form Data Payload to pack the video file cleanly
-    console.log(`[Job:${jobId}] Packaging raw video stream and metadata...`);
     const form = new FormData();
     form.append('video', fs.createReadStream(uploadedPath));
-    form.append('prompt', additionalPrompt || 'A football player running wearing bright yellow leather timberland boots');
+    form.append('prompt', additionalPrompt);
 
-    // 3. Dispatch data straight over the web to your live Lightning Studio instance
-    console.log(`[Job:${jobId}] Sending payload to Cloud GPU at: ${LIGHTNING_URL}/api/transform`);
-   // ✅ NEW SECURE STREAMING WAY
-
-// Force form-data to compute the exact byte length of the video file
-    const totalLength = await new Promise((resolve, reject) => {
-      form.getLength((err, length) => {
-        if (err) reject(err);
-        resolve(length);
-      });
+    console.log(`[Job:${jobId}] Dispatching payload over Axios tunnel to: ${LIGHTNING_URL}/api/transform`);
+    
+    // Axios safely manages internal multipart headers and boundaries without throwing content mismatch crashes
+    const response = await axios.post(`${LIGHTNING_URL}/api/transform`, form, {
+      headers: { ...form.getHeaders() },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
     });
 
-    console.log(`[Job:${jobId}] Sending payload (${(totalLength / 1024 / 1024).toFixed(2)} MB) to Cloud GPU...`);
-
-    const response = await fetch(`${LIGHTNING_URL}/api/transform`, {
-      method: 'POST',
-      body: form,
-      headers: {
-        ...form.getHeaders(),
-        'Content-Length': totalLength.toString(), // Tells Lightning exactly how long to keep the connection open
-      },
-    });
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`GPU Engine returned an operational error code ${response.status}: ${errText}`);
+    if (!response.data.success || !response.data.promptId) {
+      throw new Error(response.data.error || 'Cloud GPU rejected processing initialization');
     }
 
-    // 4. Capture the generated response vector
-    const data = await response.json();
-    if (!data.success || !data.image) {
-      throw new Error(data.error || 'GPU server processing block returned an empty file payload');
+    const { promptId } = response.data;
+    console.log(`🚀 Handshake verified by GPU. Active tracking token: ${promptId}`);
+
+    // Polling Loop executes safely inside Render background worker (ignores the 30-second gateway limit)
+    let complete = false;
+    let base64Result = '';
+
+    while (!complete) {
+      await new Promise(resolve => setTimeout(resolve, 3000)); // poll every 3 seconds
+
+      const statusRes = await axios.get(`${LIGHTNING_URL}/api/status/${promptId}`);
+      if (statusRes.data.status === 'completed') {
+        base64Result = statusRes.data.image;
+        complete = true;
+      } else if (statusRes.data.error) {
+        throw new Error(statusRes.data.error);
+      } else {
+        console.log(`⏳ [Job:${jobId}] Cloud GPU is transforming frames...`);
+      }
     }
 
-    // 5. Parse base64 frame data compilation and stream directly to local storage
-    console.log(`[Job:${jobId}] Video tracking complete. Writing output stream to disk...`);
-    const videoBuffer = Buffer.from(data.image, 'base64');
-    fs.writeFileSync(finalPath, videoBuffer);
+    console.log(`[Job:${jobId}] Video compilation returned. Writing stream data to storage...`);
+    fs.writeFileSync(finalPath, Buffer.from(base64Result, 'base64'));
 
-    // 6. Update Database Configuration to notify your frontend app
     await VideoGeneration.findByIdAndUpdate(jobId, { 
       status: 'completed', 
       videoUrl: `/temp/final_${jobId}.mp4`, 
@@ -85,9 +74,9 @@ export async function runJob(jobId, opts = {}) {
     return finalPath;
 
   } catch (error) {
-    console.error(`❌ Fatal Error occurred inside process tracking pipeline for Job ${jobId}:`, error.message);
+    const errorDetails = error.response?.data?.error || error.message;
+    console.error(`❌ Fatal Error inside process tracking pipeline for Job ${jobId}:`, errorDetails);
     
-    // Fail gracefully inside your database log tracking
     await VideoGeneration.findByIdAndUpdate(jobId, { status: 'failed', updatedAt: new Date() });
     throw error;
   }
