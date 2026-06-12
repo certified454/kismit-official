@@ -38,12 +38,26 @@ export async function runJob(jobId, opts = {}) {
 
     // 3. Dispatch data straight over the web to your live Lightning Studio instance
     console.log(`[Job:${jobId}] Sending payload to Cloud GPU at: ${LIGHTNING_URL}/api/transform`);
+   // ✅ NEW SECURE STREAMING WAY
+
+// Force form-data to compute the exact byte length of the video file
+    const totalLength = await new Promise((resolve, reject) => {
+      form.getLength((err, length) => {
+        if (err) reject(err);
+        resolve(length);
+      });
+    });
+
+    console.log(`[Job:${jobId}] Sending payload (${(totalLength / 1024 / 1024).toFixed(2)} MB) to Cloud GPU...`);
+
     const response = await fetch(`${LIGHTNING_URL}/api/transform`, {
       method: 'POST',
       body: form,
-      headers: form.getHeaders(),
+      headers: {
+        ...form.getHeaders(),
+        'Content-Length': totalLength.toString(), // Tells Lightning exactly how long to keep the connection open
+      },
     });
-
     if (!response.ok) {
       const errText = await response.text();
       throw new Error(`GPU Engine returned an operational error code ${response.status}: ${errText}`);
