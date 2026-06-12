@@ -30,7 +30,7 @@ export async function runJob(jobId, opts = {}) {
     console.log(`[Job:${jobId}] Dispatching payload over Axios tunnel to: ${LIGHTNING_URL}/`);
     
     // Axios safely manages internal multipart headers and boundaries without throwing content mismatch crashes
-    const response = await axios.post(`${LIGHTNING_URL}/api/transform`, form, {
+    const response = await axios.post(`${LIGHTNING_URL}/`, form, {
       headers: { ...form.getHeaders() },
       maxContentLength: Infinity,
       maxBodyLength: Infinity
