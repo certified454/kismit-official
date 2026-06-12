@@ -11,7 +11,7 @@ ffmpeg.setFfmpegPath(ffmpegStatic);
 const EXTRACT_FPS    = 1;
 const OUTPUT_WIDTH   = 1280;
 const OUTPUT_HEIGHT  = 720;
-const LIGHTNING_URL  = process.env.LIGHTNING_URL ;
+const LIGHTNING_URL  = process.env.LIGHTNING_URL;
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -27,47 +27,38 @@ async function probeAudio(videoPath) {
   });
 }
 
-// Forwards raw frame buffers to your private Lightning GPU Instance
-async function transformFrameOnGPU(frameBuffer, prompt, negativePrompt, faceUrl) {
+// Directly hits your local inpainting container pipeline
+async function transformFrameOnGPU(frameBuffer, prompt, negativePrompt) {
   if (!LIGHTNING_URL) {
-    throw new Error('LIGHTNING_URL  not set in environment variables');
+    throw new Error('LIGHTNING_URL environment variable is not configured');
   }
-
-  const imageBase64 = frameBuffer.toString('base64');
 
   const response = await fetch(`${LIGHTNING_URL}/api/transform`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      imageBase64,
+      imageBase64: frameBuffer.toString('base64'),
       prompt,
-      negativePrompt: negativePrompt || 'blurry, low quality, disfigured',
-      faceUrl: faceUrl || null
+      negativePrompt
     }),
   });
 
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(`GPU server error ${response.status}: ${errText}`);
+    throw new Error(`GPU server generated status code ${response.status}: ${errText}`);
   }
 
   const data = await response.json();
   if (!data.success || !data.image) {
-    throw new Error(data.error || 'GPU server returned no image assets');
+    throw new Error(data.error || 'GPU server returned empty image matrix payload');
   }
 
-  // Returns both the transformed buffer AND any bounding box coordinates computed on the GPU
-  return {
-    transformedBuffer: Buffer.from(data.image, 'base64'),
-    boundingBox: data.boundingBox || null
-  };
+  return Buffer.from(data.image, 'base64');
 }
 
-// Cleanly stitches original video with modified video sequential arrays
 function stitchVideos({ originalPath, modifiedPath, hasAudio, finalPath }) {
   return new Promise((resolve, reject) => {
     const cmd = ffmpeg();
-    
     cmd.input(originalPath);
     cmd.input(modifiedPath);
 
@@ -79,23 +70,14 @@ function stitchVideos({ originalPath, modifiedPath, hasAudio, finalPath }) {
     if (hasAudio) {
       filterGraph.push(`[v0][v1]concat=n=2:v=1:a=0[outv]`);
       cmd.complexFilter(filterGraph);
-      cmd.outputOptions([
-        '-map [outv]',
-        '-map 0:a', // Directly pull unchanged clean audio tracking from source clip
-        '-c:a aac',
-        '-ar 44100'
-      ]);
+      cmd.outputOptions(['-map [outv]', '-map 0:a', '-c:a aac', '-ar 44100']);
     } else {
       filterGraph.push(`[v0][v1]concat=n=2:v=1:a=0[outv]`);
       cmd.complexFilter(filterGraph);
       cmd.outputOptions(['-map [outv]']);
     }
 
-    cmd.outputOptions([
-         '-c:v libx264',
-         '-pix_fmt yuv420p',
-         '-shortest'
-       ])
+    cmd.outputOptions(['-c:v libx264', '-pix_fmt yuv420p', '-shortest'])
        .output(finalPath)
        .on('end', () => {
          console.log('✅ Final compilation succeeded seamlessly!');
@@ -122,12 +104,7 @@ export async function runJob(jobId, opts = {}) {
   try {
     await VideoGeneration.findByIdAndUpdate(jobId, { status: 'processing', updatedAt: new Date() });
 
-    let matchedPlayer = null;
-    if (hasPrompt) {
-      matchedPlayer = identifyPlayerFromPrompt(additionalPrompt);
-    }
-
-    console.log(`[Job:${jobId}] Extracting frames...`);
+    console.log(`[Job:${jobId}] Extracting frames from video source...`);
     await new Promise((resolve, reject) => {
       ffmpeg(uploadedPath)
         .outputOptions(['-vf', `fps=${EXTRACT_FPS}`])
@@ -151,46 +128,18 @@ export async function runJob(jobId, opts = {}) {
       try {
         const originalBuffer = fs.readFileSync(framePath);
 
-        // Send full frame once directly to your private, high-speed GPU instance
-        const { transformedBuffer, boundingBox } = await transformFrameOnGPU(
+        // Fetch the surgically inpainted buffer from the Lightning server
+        const transformedBuffer = await transformFrameOnGPU(
           originalBuffer, 
           additionalPrompt, 
-          itemsToRemove, 
-          matchedPlayer?.faceUrl
+          itemsToRemove
         );
 
-        // If your private server isolated a clean bounding box, use sharp to merge it cleanly
-        if (boundingBox) {
-          const { xmin, ymin, xmax, ymax } = boundingBox;
-          const width = Math.round(xmax - xmin);
-          const height = Math.round(ymax - ymin);
-
-          // Ensure box has valid dimensions before attempting composition
-          if (width > 10 && height > 10) {
-            const resizedCrop = await sharp(transformedBuffer)
-              .resize(width, height)
-              .toBuffer();
-
-            const compositedFrame = await sharp(originalBuffer)
-              .composite([{
-                input: resizedCrop,
-                top: Math.round(Math.max(0, ymin)),
-                left: Math.round(Math.max(0, xmin))
-              }])
-              .toBuffer();
-
-            fs.writeFileSync(outPath, compositedFrame);
-            console.log(`[Job:${jobId}] Frame ${i}: Composited target zone flawlessly via Lightning coordinates.`);
-            continue;
-          }
-        }
-
-        // Default Fallback: Write full frame if no clear box bounding metrics returned
         fs.writeFileSync(outPath, transformedBuffer);
+        console.log(`[Job:${jobId}] Frame ${i}: Surgically processed via Local Inpainting.`);
 
       } catch (err) {
         console.error(`⚠️ Frame ${frameFiles[i]} processing error:`, err.message);
-        // Safely fall back to the original image so the video compile step doesn't fail
         fs.copyFileSync(framePath, outPath);
       }
     }
@@ -205,7 +154,6 @@ export async function runJob(jobId, opts = {}) {
     const finalPath = path.join(process.cwd(), 'temp', `final_${jobId}.mp4`);
     const hasAudio  = await probeAudio(uploadedPath);
 
-    // Call updated simple stitch script to combine the original layout with the edits
     await stitchVideos({ 
       originalPath: uploadedPath, 
       modifiedPath: modifiedClip, 
