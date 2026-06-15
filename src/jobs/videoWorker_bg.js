@@ -60,30 +60,44 @@ export async function runJob(jobId, opts = {}) {
 
       let statusRes;
       try {
+        // 1. Tell Axios to look out for raw binary data array instead of text strings
         statusRes = await axios.get(`${LIGHTNING_URL}/api/status/${promptId}`, {
-          timeout: 15000 // 15s per poll request
+          timeout: 15000,
+          responseType: 'json' // Keep default for checking status message first
         });
       } catch (pollErr) {
-        // Network-level failure (connection refused, timeout, etc.)
         transientRetries++;
         console.warn(`⚠️ [Job:${jobId}] Poll network error (${transientRetries}/${MAX_TRANSIENT_RETRIES}): ${pollErr.message}`);
         if (transientRetries > MAX_TRANSIENT_RETRIES) {
           throw new Error(`Too many poll failures: ${pollErr.message}`);
         }
-        continue; // retry the loop
+        continue;
       }
 
       const data = statusRes.data;
 
       if (data.status === 'completed' && data.image) {
-        base64Result = data.image;
+        console.log(`[Job:${jobId}] Video ready on GPU. Streaming file directly to disk...`);
         complete = true;
 
+        // 2. Fetch the actual completed video asset as a raw binary stream
+        const downloadRes = await axios.get(`${LIGHTNING_URL}/api/status/${promptId}`, {
+          responseType: 'stream' 
+        });
+
+        // 3. Pipe the incoming binary stream directly into your final file path
+        const writer = fs.createWriteStream(finalPath);
+        downloadRes.data.pipe(writer);
+
+        await new Promise((resolve, reject) => {
+          writer.on('finish', resolve);
+          writer.on('error', reject);
+        });
+
       } else if (data.status === 'processing') {
-        // Reset transient counter on clean processing responses
         transientRetries = 0;
         console.log(`⏳ [Job:${jobId}] GPU processing... (poll ${totalPolls})`);
-
+        
       } else if (data.error) {
         // Distinguish transient fetch failures from real ComfyUI errors
         if (data.error.includes('fetch failed')) {
