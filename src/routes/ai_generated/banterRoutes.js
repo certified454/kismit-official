@@ -6,15 +6,14 @@ import fs from 'fs';
 import { runJob } from '../../jobs/videoWorker_bg.js';
 
 const router = express.Router();
-
 const upload = multer({ dest: path.join(process.cwd(), 'temp/') });
 
 // POST /banter/video-video
 router.post('/video-video', upload.single('video'), async (req, res) => {
-  const videoFile        = req.file;
-  const additionalPrompt = req.body.prompt?.trim() || '';
-  const userId           = req.body.userId || null;
-  const itemsToRemove    = 'disfigured, blurry, low quality, deformed anatomy, watermark, text';
+  const videoFile = req.file;
+  // Read target_item directly to follow the text keyword workflow modification
+  const targetItem = req.body.target_item?.trim() || 'shoes'; 
+  const userId = req.body.userId || null;
 
   if (!videoFile) {
     return res.status(400).json({ error: 'Missing video file upload' });
@@ -23,7 +22,7 @@ router.post('/video-video', upload.single('video'), async (req, res) => {
   try {
     const activeJob = await VideoGeneration.create({
       userId: userId ? String(userId) : null,
-      prompt: additionalPrompt,
+      prompt: targetItem,
       status: 'pending',
     });
 
@@ -32,14 +31,13 @@ router.post('/video-video', upload.single('video'), async (req, res) => {
     process.nextTick(() => {
       runJob(jobId, {
         uploadedPath: videoFile.path,
-        additionalPrompt,
-        itemsToRemove,
+        targetItem: targetItem
       }).catch((err) =>
         console.error(`[JobWorker:${jobId}] Failed:`, err)
       );
     });
 
-    return res.status(202).json({ success: true, jobId, message: 'Job queued' });
+    return res.status(202).json({ success: true, jobId, message: 'Job queued successfully' });
 
   } catch (err) {
     console.error('Enqueue error', err);
@@ -48,7 +46,6 @@ router.post('/video-video', upload.single('video'), async (req, res) => {
 });
 
 // GET /banter/status/:id
-// Returns status + a proper streamable URL (not a server file path)
 router.get('/status/:id', async (req, res) => {
   try {
     const job = await VideoGeneration
@@ -59,9 +56,6 @@ router.get('/status/:id', async (req, res) => {
       return res.status(404).json({ error: 'Job not found' });
     }
 
-    // ✅ Convert the raw server file path into a streamable HTTP URL
-    // e.g. /opt/render/project/src/temp/final_xxx.mp4
-    //   →  https://yourapp.onrender.com/banter/stream/final_xxx.mp4
     let streamUrl = null;
     if (job.videoUrl && job.status === 'completed') {
       const filename = path.basename(job.videoUrl);
@@ -69,8 +63,8 @@ router.get('/status/:id', async (req, res) => {
     }
 
     return res.json({
-      status:    job.status,
-      videoUrl:  streamUrl,        // relative URL — frontend appends API_URL
+      status: job.status,
+      videoUrl: streamUrl, 
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
     });
@@ -82,14 +76,13 @@ router.get('/status/:id', async (req, res) => {
 });
 
 // GET /banter/stream/:filename
-// Streams the final video file back to the client
-// Supports range requests so the video player can seek
+// Streams the final video file back to the client with robust seek configurations
 router.get('/stream/:filename', (req, res) => {
-  const filename = path.basename(req.params.filename); // prevent path traversal
+  const filename = path.basename(req.params.filename); 
   const filePath = path.join(process.cwd(), 'temp', filename);
 
   if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Video not found' });
+    return res.status(404).json({ error: 'Video asset not found' });
   }
 
   const stat = fs.statSync(filePath);
@@ -97,7 +90,6 @@ router.get('/stream/:filename', (req, res) => {
   const range = req.headers.range;
 
   if (range) {
-    // 1. Safely parse the range header
     const parts = range.replace(/bytes=/, "").split("-");
     const startPart = parts[0];
     const endPart = parts[1];
@@ -105,7 +97,6 @@ router.get('/stream/:filename', (req, res) => {
     const start = parseInt(startPart, 10);
     const end = endPart ? parseInt(endPart, 10) : fileSize - 1;
 
-    // 2. Validation Guard: Ensure bounds are sane before creating the stream
     if (isNaN(start) || isNaN(end) || start >= fileSize || end >= fileSize || start > end) {
       res.writeHead(416, {
         'Content-Range': `bytes */${fileSize}`
@@ -131,7 +122,6 @@ router.get('/stream/:filename', (req, res) => {
     fileStream.pipe(res);
 
   } else {
-    // Full file streaming fallback
     res.writeHead(200, {
       'Content-Length': fileSize,
       'Content-Type': 'video/mp4',
@@ -139,4 +129,5 @@ router.get('/stream/:filename', (req, res) => {
     fs.createReadStream(filePath).pipe(res);
   }
 });
+
 export default router;

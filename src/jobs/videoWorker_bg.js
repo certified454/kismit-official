@@ -11,7 +11,7 @@ function ensureDir(dir) {
 }
 
 export async function runJob(jobId, opts = {}) {
-  const { uploadedPath, additionalPrompt = '' } = opts;
+  const { uploadedPath, targetItem = 'shoes' } = opts;
 
   const tempDir = path.join(process.cwd(), 'temp');
   ensureDir(tempDir);
@@ -25,9 +25,10 @@ export async function runJob(jobId, opts = {}) {
 
     const form = new FormData();
     form.append('video', fs.createReadStream(uploadedPath));
-    form.append('prompt', additionalPrompt);
+    // Pass target_item to drive the text-based object tracking on the Comfy instance
+    form.append('target_item', targetItem);
 
-    console.log(`[Job:${jobId}] Dispatching to Lightning GPU: ${LIGHTNING_URL}/`);
+    console.log(`[Job:${jobId}] Dispatching to Lightning Instance: ${LIGHTNING_URL}/`);
 
     const response = await axios.post(`${LIGHTNING_URL}/`, form, {
       headers: { ...form.getHeaders() },
@@ -40,14 +41,12 @@ export async function runJob(jobId, opts = {}) {
     }
 
     const { promptId } = response.data;
-    console.log(`🚀 GPU handshake verified. Tracking token: ${promptId}`);
+    console.log(`🚀 Handshake verified. Tracking token: ${promptId}`);
 
-    // Polling loop with transient error retry
     let complete = false;
-    let base64Result = '';
     let transientRetries = 0;
-    const MAX_TRANSIENT_RETRIES = 8; // allow up to 8 x 3s = 24s of ComfyUI instability
-    const MAX_TOTAL_POLLS = 200;     // 200 x 3s = 10 min hard timeout
+    const MAX_TRANSIENT_RETRIES = 8; 
+    const MAX_TOTAL_POLLS = 200;     
     let totalPolls = 0;
 
     while (!complete) {
@@ -55,15 +54,14 @@ export async function runJob(jobId, opts = {}) {
       totalPolls++;
 
       if (totalPolls > MAX_TOTAL_POLLS) {
-        throw new Error(`Job ${jobId} timed out after 10 minutes of polling`);
+        throw new Error(`Job ${jobId} timed out after polling threshold exceeded`);
       }
 
       let statusRes;
       try {
-        // 1. Tell Axios to look out for raw binary data array instead of text strings
         statusRes = await axios.get(`${LIGHTNING_URL}/api/status/${promptId}`, {
           timeout: 15000,
-          responseType: 'json' // Keep default for checking status message first
+          responseType: 'json'
         });
       } catch (pollErr) {
         transientRetries++;
@@ -77,29 +75,19 @@ export async function runJob(jobId, opts = {}) {
       const data = statusRes.data;
 
       if (data.status === 'completed' && data.image) {
-        console.log(`[Job:${jobId}] Video ready on GPU. Streaming file directly to disk...`);
+        console.log(`[Job:${jobId}] Video asset ready. Processing Base64 string directly to clean file...`);
         complete = true;
 
-        // 2. Fetch the actual completed video asset as a raw binary stream
-        const downloadRes = await axios.get(`${LIGHTNING_URL}/api/status/${promptId}`, {
-          responseType: 'stream' 
-        });
-
-        // 3. Pipe the incoming binary stream directly into your final file path
-        const writer = fs.createWriteStream(finalPath);
-        downloadRes.data.pipe(writer);
-
-        await new Promise((resolve, reject) => {
-          writer.on('finish', resolve);
-          writer.on('error', reject);
-        });
-
+        // FIXED: The server delivers the completed video file wrapped as a base64 string 
+        // inside data.image. We convert it to a binary buffer and write it out cleanly.
+        const videoBuffer = Buffer.from(data.image, 'base64');
+        fs.writeFileSync(finalPath, videoBuffer);
+        
       } else if (data.status === 'processing') {
         transientRetries = 0;
-        console.log(`⏳ [Job:${jobId}] GPU processing... (poll ${totalPolls})`);
+        console.log(`⏳ [Job:${jobId}] Pipeline calculating frames... (poll ${totalPolls})`);
         
       } else if (data.error) {
-        // Distinguish transient fetch failures from real ComfyUI errors
         if (data.error.includes('fetch failed')) {
           transientRetries++;
           console.warn(`⚠️ [Job:${jobId}] ComfyUI transient fetch error (${transientRetries}/${MAX_TRANSIENT_RETRIES}): ${data.error}`);
@@ -107,22 +95,22 @@ export async function runJob(jobId, opts = {}) {
             throw new Error(`ComfyUI repeatedly failing: ${data.error}`);
           }
         } else {
-          // Hard ComfyUI error — fail immediately
           throw new Error(data.error);
         }
-
       } else {
-        // Unknown response shape — treat as transient
         transientRetries++;
-        console.warn(`⚠️ [Job:${jobId}] Unexpected poll response (${transientRetries}/${MAX_TRANSIENT_RETRIES}):`, data);
+        console.warn(`⚠️ [Job:${jobId}] Unexpected response (${transientRetries}/${MAX_TRANSIENT_RETRIES})`);
         if (transientRetries > MAX_TRANSIENT_RETRIES) {
-          throw new Error(`Unexpected response from GPU server: ${JSON.stringify(data)}`);
+          throw new Error(`Unexpected endpoint response structure.`);
         }
       }
     }
 
-    console.log(`[Job:${jobId}] Video received. Writing to disk...`);
-    fs.writeFileSync(finalPath, Buffer.from(base64Result, 'base64'));
+    // FIXED: Clean up the old, empty string overwrite line that was breaking the file layout.
+    // We safely assert existence checks on the verified path before database saves.
+    if (!fs.existsSync(finalPath) || fs.statSync(finalPath).size === 0) {
+      throw new Error("Disk synchronization validation failed — Target MP4 is missing or empty.");
+    }
 
     await VideoGeneration.findByIdAndUpdate(jobId, {
       status: 'completed',
@@ -131,6 +119,10 @@ export async function runJob(jobId, opts = {}) {
     });
 
     console.log(`🎉 [Job:${jobId}] Pipeline complete!`);
+    
+    // Clean up temporary initial user input video to keep cloud storage disk lean
+    if (fs.existsSync(uploadedPath)) fs.unlinkSync(uploadedPath);
+    
     return finalPath;
 
   } catch (error) {
@@ -138,6 +130,7 @@ export async function runJob(jobId, opts = {}) {
     console.error(`❌ Fatal pipeline error for Job ${jobId}:`, errorDetails);
 
     await VideoGeneration.findByIdAndUpdate(jobId, { status: 'failed', updatedAt: new Date() });
+    if (fs.existsSync(uploadedPath)) fs.unlinkSync(uploadedPath);
     throw error;
   }
 }
