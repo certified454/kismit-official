@@ -35,7 +35,7 @@ export const detectBookie = (code) => {
 
 const fetchRealSportybetSlip = async (code) => {
   const rawCode = code.replace(/SPORTY|[-_\s]/gi, '').toUpperCase();
-  const url = `https://services.sportybet.com/api/ng/realtime/wager/share/get/${rawCode}`;
+  const url = `https://www.sportybet.com/?shareCode${rawCode}`;
   
   console.log(`🌐 [HTTP Fetch] GET -> ${url}`);
   const response = await fetch(url, {
