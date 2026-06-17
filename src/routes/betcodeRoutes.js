@@ -2,7 +2,7 @@ import express from 'express';
 import {
   detectBookie,
   parseBetcode,
-  buildBookieCode,
+  buildTargetBookieCode,
   supportedBookieList,
 } from '../lib/betcodeConverter.js';
 
@@ -33,7 +33,7 @@ router.post('/convert', async (req, res) => {
     }
 
     const betSlip = parseBetcode(code, source);
-    const convertedCode = buildBookieCode(betSlip, targetBookie);
+    const convertedCode = buildTargetBookieCode(betSlip, targetBookie);
 
     res.status(200).json({
       message: 'Bet code converted successfully.',
