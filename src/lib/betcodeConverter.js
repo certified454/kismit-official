@@ -57,9 +57,13 @@ const fetchRealSportybetSlip = async (code) => {
   });
 
   if (!response.ok) {
+    console.error(`SportyBet slip lookup failed with status: ${response.status}`);
     throw new Error(`SportyBet slip lookup failed with status: ${response.status}`);
   }
 
+  if (response.ok) {
+    console.log(`Successfully fetched SportyBet slip for code: ${rawCode}`);
+  }
   const data = await response.json();
 
   if (data.status !== 10000 || !data.data) {
@@ -114,16 +118,21 @@ export const parseBetcode = async (code, bookie) => {
 export const buildTargetBookieCode = async (decodedSlip, targetBookie) => {
   const target = targetBookie.toLowerCase();
 
-  if (decodedSlip.games.length === 0) {
+  // ✅ FIX: Safely extract the games array no matter how parseBetcode packages it
+  const gamesArray = Array.isArray(decodedSlip)
+    ? decodedSlip
+    : (decodedSlip?.games || decodedSlip?.decodedSlip?.games || []);
+
+  if (gamesArray.length === 0) {
     throw new Error(`Cannot generate code for ${target}. The source betslip contains no readable games.`);
   }
 
   // --- THIS IS WHERE THE TRANSLATION HAPPENS ---
   if (target === 'bet9ja') {
     // For a fully productionized version, you would use a headless script or target api
-    // to search Bet9ja for each game in `decodedSlip.games`, select the outcomes, and click 'Book'
+    // to search Bet9ja for each game in `gamesArray`, select the outcomes, and click 'Book'
     
-    console.log(`Matching ${decodedSlip.games.length} games onto Bet9ja systems...`);
+    console.log(`Matching ${gamesArray.length} games onto Bet9ja systems...`);
     
     // For now, return a clean mock success string demonstrating the pipeline path
     // We will build out the automated destination bookie collectors next!
