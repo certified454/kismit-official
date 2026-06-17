@@ -33,50 +33,72 @@ export const detectBookie = (code) => {
   return 'sportybet';
 };
 
+// src/lib/betcodeConverter.js
+
 const fetchRealSportybetSlip = async (code) => {
+  // Strip out spacing or custom prefixes
   const rawCode = code.replace(/SPORTY|[-_\s]/gi, '').toUpperCase();
-  const url = `https://www.sportybet.com/?shareCode${rawCode}`;
   
-  console.log(`🌐 [HTTP Fetch] GET -> ${url}`);
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Accept': 'application/json',
-      'Platform': 'web'
+  // 1. The original target endpoint that Render can't hit directly
+  const targetUrl = `https://services.sportybet.com/api/ng/realtime/wager/share/get/${rawCode}`;
+  
+  const apiKey = process.env.SCRAPER_API_KEY;
+  if (!apiKey) {
+    console.error("❌ Environment configuration failure: SCRAPER_API_KEY is missing!");
+    throw new Error("Server configuration missing proxy credentials.");
+  }
+
+  // 2. Wrap the destination link inside the scraper parameter structure
+  // We explicitly add '&country_code=ng' to tell it to route specifically through a Nigerian residential node
+  const proxyUrl = `https://api.scraperapi.com/?api_key=${apiKey}&url=${encodeURIComponent(targetUrl)}&country_code=ng`;
+  
+  console.log(`🌐 [Proxy Routing] Masking Render data-center IP. Routing through local residential node...`);
+
+  try {
+    const response = await fetch(proxyUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`ScraperAPI proxy gate returned status: ${response.status}`);
     }
-  });
 
-  if (!response.ok) {
-    throw new Error(`SportyBet proxy gate rejected connection. HTTP Status: ${response.status}`);
+    const data = await response.json();
+    console.log(`✅ [Proxy Success] Successfully bypassed firewall. Received data from SportyBet API cluster.`);
+
+    if (data.status !== 10000 || !data.data) {
+      throw new Error(data.message || "This booking code does not exist or has expired on SportyBet.");
+    }
+
+    const selections = data.data.selections || [];
+
+    // 3. Map outcomes directly into your clean KSM software structures
+    const games = selections.map(game => ({
+      sport: "Football",
+      tournament: game.tournamentName,
+      homeTeam: game.homeTeam,
+      awayTeam: game.awayTeam,
+      normalizedHome: normalizeTeamName(game.homeTeam),
+      normalizedAway: normalizeTeamName(game.awayTeam),
+      market: game.marketName,         
+      selection: game.outcomeName,     
+      odds: game.odds
+    }));
+
+    return {
+      bookie: 'sportybet',
+      rawCode,
+      gamesCount: games.length,
+      games
+    };
+
+  } catch (error) {
+    console.error(`🚨 Proxy Network Layer Exception: ${error.message}`);
+    throw new Error(`Failed to safely decode SportyBet ticket data: ${error.message}`);
   }
-
-  const data = await response.json();
-
-  if (data.status !== 10000 || !data.data) {
-    throw new Error(data.message || "This booking code does not exist or has expired on SportyBet.");
-  }
-
-  const selections = data.data.selections || [];
-
-  const games = selections.map(game => ({
-    sport: "Football",
-    tournament: game.tournamentName,
-    homeTeam: game.homeTeam,
-    awayTeam: game.awayTeam,
-    normalizedHome: normalizeTeamName(game.homeTeam),
-    normalizedAway: normalizeTeamName(game.awayTeam),
-    market: game.marketName,         
-    selection: game.outcomeName,     
-    odds: game.odds
-  }));
-
-  return {
-    bookie: 'sportybet',
-    rawCode,
-    gamesCount: games.length,
-    games
-  };
 };
 
 export const parseBetcode = async (code, bookie) => {
