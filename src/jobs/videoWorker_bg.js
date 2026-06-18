@@ -3,7 +3,7 @@ import fs from 'fs';
 import VideoGeneration from '../modules/video.js';
 
 // Double-check your environment layout or hardcode it directly if testing:
-const LIGHTNING_URL = `https://8000-${process.env.LIGHTNING_CLOUDSPACE_HOST}.cloudspaces.litng.ai`;
+const LIGHTNING_URL = process.env.LIGHTNING_URL;
 
 export async function runJob(jobId, { uploadedPath, targetItem }) {
   const finalRenderPath = path.join(process.cwd(), 'temp', `${jobId}_output.mp4`);
