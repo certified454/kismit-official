@@ -11,12 +11,11 @@ const upload = multer({ dest: path.join(process.cwd(), 'temp/') });
 // POST /banter/video-video
 router.post('/video-video', upload.single('video'), async (req, res) => {
   const videoFile = req.file;
-  // Read target_item directly to follow the text keyword workflow modification
   const targetItem = req.body.target_item?.trim() || 'shoes'; 
   const userId = req.body.userId || null;
 
   if (!videoFile) {
-    return res.status(400).json({ error: 'Missing video file upload' });
+    return res.status(400).json({ error: 'Missing video file upload target asset.' });
   }
 
   try {
@@ -28,20 +27,21 @@ router.post('/video-video', upload.single('video'), async (req, res) => {
 
     const jobId = activeJob._id.toString();
 
+    // Hand execution over to background worker immediately
     process.nextTick(() => {
       runJob(jobId, {
         uploadedPath: videoFile.path,
         targetItem: targetItem
       }).catch((err) =>
-        console.error(`[JobWorker:${jobId}] Failed:`, err)
+        console.error(`[JobWorker:${jobId}] Runtime processing failure triggered:`, err)
       );
     });
 
-    return res.status(202).json({ success: true, jobId, message: 'Job queued successfully' });
+    return res.status(202).json({ success: true, jobId, message: 'Processing sequence initiated.' });
 
   } catch (err) {
-    console.error('Enqueue error', err);
-    return res.status(500).json({ error: 'Failed to enqueue job' });
+    console.error('Enqueue error context failure:', err);
+    return res.status(500).json({ error: 'System job creation scheduling failed.' });
   }
 });
 
@@ -53,36 +53,29 @@ router.get('/status/:id', async (req, res) => {
       .select('status videoUrl updatedAt createdAt');
 
     if (!job) {
-      return res.status(404).json({ error: 'Job not found' });
-    }
-
-    let streamUrl = null;
-    if (job.videoUrl && job.status === 'completed') {
-      const filename = path.basename(job.videoUrl);
-      streamUrl = `/banter/stream/${filename}`;
+      return res.status(404).json({ error: 'Target conversion request token invalid.' });
     }
 
     return res.json({
       status: job.status,
-      videoUrl: streamUrl, 
+      videoUrl: job.status === 'completed' ? job.videoUrl : null, 
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
     });
 
   } catch (err) {
-    console.error('Status lookup error', err);
-    return res.status(500).json({ error: 'Failed to fetch job status' });
+    console.error('Status validation context lookup error:', err);
+    return res.status(500).json({ error: 'Failed to access structural process status records.' });
   }
 });
 
 // GET /banter/stream/:filename
-// Streams the final video file back to the client with robust seek configurations
 router.get('/stream/:filename', (req, res) => {
   const filename = path.basename(req.params.filename); 
   const filePath = path.join(process.cwd(), 'temp', filename);
 
   if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Video asset not found' });
+    return res.status(404).json({ error: 'Requested video output asset could not be found.' });
   }
 
   const stat = fs.statSync(filePath);
@@ -98,9 +91,7 @@ router.get('/stream/:filename', (req, res) => {
     const end = endPart ? parseInt(endPart, 10) : fileSize - 1;
 
     if (isNaN(start) || isNaN(end) || start >= fileSize || end >= fileSize || start > end) {
-      res.writeHead(416, {
-        'Content-Range': `bytes */${fileSize}`
-      });
+      res.writeHead(416, { 'Content-Range': `bytes */${fileSize}` });
       return res.end();
     }
 
@@ -115,12 +106,11 @@ router.get('/stream/:filename', (req, res) => {
     });
 
     fileStream.on('error', (streamErr) => {
-      console.error("[Stream Error] Error streaming file segment:", streamErr);
+      console.error("[Stream Layer Error] Exception writing out block segment chunks:", streamErr);
       if (!res.headersSent) res.status(500).end();
     });
 
     fileStream.pipe(res);
-
   } else {
     res.writeHead(200, {
       'Content-Length': fileSize,
