@@ -1,86 +1,131 @@
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
+import FormData from 'form-data';
+import axios from 'axios';
 import VideoGeneration from '../modules/video.js';
 
-// Double-check your environment layout or hardcode it directly if testing:
 const LIGHTNING_URL = process.env.LIGHTNING_URL;
 
-export async function runJob(jobId, { uploadedPath, targetItem }) {
-  const finalRenderPath = path.join(process.cwd(), 'temp', `${jobId}_output.mp4`);
+function ensureDir(dir) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
 
-  await VideoGeneration.findByIdAndUpdate(jobId, { status: 'processing' });
-  console.log(`📡 [Render Worker] Offloading job ${jobId} to Lightning GPU Studio: ${LIGHTNING_URL}`);
+export async function runJob(jobId, opts = {}) {
+  const { uploadedPath, additionalPrompt = '' } = opts;
+
+  const tempDir = path.join(process.cwd(), 'temp');
+  ensureDir(tempDir);
+  const finalPath = path.join(tempDir, `final_${jobId}.mp4`);
 
   try {
-    const formData = new FormData();
-    const fileBuffer = fs.readFileSync(uploadedPath);
-    const blob = new Blob([fileBuffer], { type: 'video/mp4' });
-    formData.append('video', blob, path.basename(uploadedPath));
-    formData.append('target_item', targetItem);
+    await VideoGeneration.findByIdAndUpdate(jobId, { status: 'processing', updatedAt: new Date() });
+    console.log(`[Job:${jobId}] Launching pipeline...`);
 
-    const submitResponse = await fetch(`${LIGHTNING_URL}/`, {
-      method: 'POST',
-      body: formData,
+    if (!LIGHTNING_URL) throw new Error('LIGHTNING_URL environment variable is missing');
+
+    const form = new FormData();
+    form.append('video', fs.createReadStream(uploadedPath));
+    form.append('prompt', additionalPrompt);
+
+    console.log(`[Job:${jobId}] Dispatching to Lightning GPU: ${LIGHTNING_URL}/`);
+
+    const response = await axios.post(`${LIGHTNING_URL}/`, 
+      form, {
+        headers: { ...form.getHeaders() 
+
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
     });
-    
-    // ── SAFE PARSING LAYER ──
-    const responseText = await submitResponse.text();
-    let submitData;
-    
-    try {
-      submitData = JSON.parse(responseText);
-    } catch (parseErr) {
-      console.error(`❌ [Render Worker] Lightning did not return valid JSON. Received raw text instead:`);
-      console.error(`----------------------------------------\n${responseText}\n----------------------------------------`);
-      throw new Error("Lightning Studio returned an HTML/Text error wrapper instead of JSON API response.");
+
+    if (!response.data.success || !response.data.promptId) {
+      throw new Error(response.data.error || 'GPU rejected processing initialization');
     }
 
-    if (!submitData.success || !submitData.promptId) {
-      throw new Error(submitData.error || 'Failed to initialize remote task');
-    }
+    const { promptId } = response.data;
+    console.log(`🚀 GPU handshake verified. Tracking token: ${promptId}`);
 
-    const remoteJobId = submitData.promptId;
-    console.log(`⏳ [Render Worker] Remote job registered: ${remoteJobId}. Polling...`);
+    // Polling loop with transient error retry
+    let complete = false;
+    let base64Result = '';
+    let transientRetries = 0;
+    const MAX_TRANSIENT_RETRIES = 8;
+    const MAX_TOTAL_POLLS = 200;
+    let totalPolls = 0;
 
-    let isDone = false;
-    let attempts = 0;
-    
-    while (!isDone && attempts < 60) {
+    while (!complete) {
       await new Promise(resolve => setTimeout(resolve, 5000));
-      attempts++;
+      totalPolls++;
 
-      const statusCheck = await fetch(`${LIGHTNING_URL}/api/status/${remoteJobId}`);
-      const contentType = statusCheck.headers.get('content-type') || '';
-      
-      if (contentType.includes('application/json')) {
-        const statusData = await statusCheck.json();
-        if (statusData.status === 'processing') {
-          console.log(`⏳ [Render Worker] Still baking on GPU (Attempt ${attempts}/60)...`);
-          continue;
+      if (totalPolls > MAX_TOTAL_POLLS) {
+        throw new Error(`Job ${jobId} timed out after 15 minutes of polling`);
+      }
+
+      let statusRes;
+      try {
+        statusRes = await axios.get(`${LIGHTNING_URL}/api/status/${promptId}`, {
+          timeout: 15000 // 15s per poll request
+        });
+      } catch (pollErr) {
+        transientRetries++;
+        console.warn(`⚠️ [Job:${jobId}] Poll network error (${transientRetries}/${MAX_TRANSIENT_RETRIES}): ${pollErr.message}`);
+        if (transientRetries > MAX_TRANSIENT_RETRIES) {
+          throw new Error(`Too many poll failures: ${pollErr.message}`);
         }
-        if (statusData.success === false || statusData.status === 'failed') {
-          throw new Error(statusData.error || 'GPU worker failed processing');
+        continue;
+      }
+
+      const data = statusRes.data;
+
+      if (data.status === 'completed' && data.image) {
+        base64Result = data.image;
+        complete = true;
+
+      } else if (data.status === 'processing') {
+        transientRetries = 0;
+        console.log(`⏳ [Job:${jobId}] GPU processing... (poll ${totalPolls})`);
+
+      } else if (data.error) {
+        if (data.error.includes('fetch failed')) {
+          transientRetries++;
+          console.warn(`⚠️ [Job:${jobId}] ComfyUI transient fetch error (${transientRetries}/${MAX_TRANSIENT_RETRIES}): ${data.error}`);
+          if (transientRetries > MAX_TRANSIENT_RETRIES) {
+            throw new Error(`ComfyUI repeatedly failing: ${data.error}`);
+          }
+        } else {
+          // Hard ComfyUI error — fail immediately
+          throw new Error(data.error);
         }
+
       } else {
-        console.log(`📥 [Render Worker] Processing complete! Downloading video...`);
-        const arrayBuffer = await statusCheck.arrayBuffer();
-        fs.writeFileSync(finalRenderPath, Buffer.from(arrayBuffer));
-        isDone = true;
+        // Unknown response shape — treat as transient
+        transientRetries++;
+        console.warn(`⚠️ [Job:${jobId}] Unexpected poll response (${transientRetries}/${MAX_TRANSIENT_RETRIES}):`, data);
+        if (transientRetries > MAX_TRANSIENT_RETRIES) {
+          throw new Error(`Unexpected response from GPU server: ${JSON.stringify(data)}`);
+        }
       }
     }
 
-    if (!isDone) throw new Error('Lightning studio processing sequence timed out.');
+    console.log(`[Job:${jobId}] Video received. Writing to disk...`);
+    fs.writeFileSync(finalPath, Buffer.from(base64Result, 'base64'));
 
     await VideoGeneration.findByIdAndUpdate(jobId, {
       status: 'completed',
-      videoUrl: `/banter/stream/${jobId}_output.mp4`
+      videoUrl: `/temp/final_${jobId}.mp4`,
+      updatedAt: new Date()
     });
-    console.log(`✅ [Render Worker] Job ${jobId} fully synced.`);
 
-  } catch (err) {
-    console.error(`❌ [Render Worker Error]:`, err.message);
-    await VideoGeneration.findByIdAndUpdate(jobId, { status: 'failed' });
-  } finally {
-    if (fs.existsSync(uploadedPath)) fs.unlinkSync(uploadedPath);
+    console.log(`🎉 [Job:${jobId}] Pipeline complete!`);
+    return finalPath;
+
+  } catch (error) {
+    const errorDetails = error.response?.data?.error || error.message;
+    console.error(`❌ Fatal pipeline error for Job ${jobId}:`, errorDetails);
+
+    await VideoGeneration.findByIdAndUpdate(jobId, { status: 'failed', updatedAt: new Date() });
+    throw error;
   }
 }
+
+export default { runJob };
